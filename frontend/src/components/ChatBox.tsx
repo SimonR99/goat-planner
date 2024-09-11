@@ -27,6 +27,10 @@ const ChatBox: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showPlanTags, setShowPlanTags] = useState(false);
   const [currentAIResponse, setCurrentAIResponse] = useState<string>('');
+  const [isReceivingPlan, setIsReceivingPlan] = useState(false);
+  const [isTTSEnabled, setIsTTSEnabled] = useState(false);
+  const [ttsBuffer, setTtsBuffer] = useState('');
+  const ttsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     socket.on('connect', () => {
@@ -51,9 +55,22 @@ const ChatBox: React.FC = () => {
                 : conv
             )
           );
-          setCurrentAIResponse(''); // Reset AI response when user sends a message
+          setCurrentAIResponse('');
+          setIsReceivingPlan(false);
         } else {
-          setCurrentAIResponse(prev => prev + data.message.text);
+          let newContent = data.message.text;
+          if (newContent.includes('<plan>')) {
+            setIsReceivingPlan(true);
+            newContent = newContent.split('<plan>')[0];
+          }
+          if (newContent.includes('</plan>')) {
+            setIsReceivingPlan(false);
+            newContent = newContent.split('</plan>')[1] || '';
+          }
+          if (!isReceivingPlan && newContent) {
+            setCurrentAIResponse(prev => prev + newContent);
+            speak(newContent);
+          }
         }
       }
     });
@@ -67,7 +84,7 @@ const ChatBox: React.FC = () => {
               : conv
           )
         );
-        setCurrentAIResponse(''); // Reset after adding to conversation
+        setCurrentAIResponse('');
       }
     });
 
@@ -77,7 +94,7 @@ const ChatBox: React.FC = () => {
       socket.off('new_message');
       socket.off('ai_response_complete');
     };
-  }, [currentConversationId, currentAIResponse]);
+  }, [currentConversationId, currentAIResponse, isReceivingPlan, isTTSEnabled]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,7 +146,6 @@ const ChatBox: React.FC = () => {
     let lastIndex = 0;
     let match;
 
-    // Remove plan tags if showPlanTags is false
     let processedText = showPlanTags ? message.text : message.text.replace(planRegex, '');
 
     while ((match = codeBlockRegex.exec(processedText)) !== null) {
@@ -165,6 +181,30 @@ const ChatBox: React.FC = () => {
     return parts.length > 0 ? parts : processedText;
   };
 
+  const speak = (text: string) => {
+    if ('speechSynthesis' in window && isTTSEnabled) {
+      setTtsBuffer(prevBuffer => prevBuffer + ' ' + text);
+
+      if (ttsTimeoutRef.current) {
+        clearTimeout(ttsTimeoutRef.current);
+      }
+
+      ttsTimeoutRef.current = setTimeout(() => {
+        const utterance = new SpeechSynthesisUtterance(ttsBuffer);
+        window.speechSynthesis.speak(utterance);
+        setTtsBuffer('');
+      }, 1000); // Adjust this delay as needed
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (ttsTimeoutRef.current) {
+        clearTimeout(ttsTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-red-200 flex justify-between items-center">
@@ -174,10 +214,19 @@ const ChatBox: React.FC = () => {
             <input
               type="checkbox"
               checked={showPlanTags}
-              onChange={() => setShowPlanTags(!showPlanTags)}
+              onChange={(e) => setShowPlanTags(e.target.checked)}
               className="mr-2"
             />
             Show Plan Tags
+          </label>
+          <label className="flex items-center mr-4">
+            <input
+              type="checkbox"
+              checked={isTTSEnabled}
+              onChange={(e) => setIsTTSEnabled(e.target.checked)}
+              className="mr-2"
+            />
+            Enable Text-to-Speech
           </label>
           <button onClick={handleNewConversation} className="bg-red-600 text-white px-4 py-2 rounded">
             New Conversation
@@ -237,14 +286,14 @@ const ChatBox: React.FC = () => {
               <div key={message.id || index} className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-3/4 p-3 rounded-lg ${
                   message.isUser ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-800'
-                } break-words whitespace-pre-wrap`}>
+                } break-words whitespace-pre-wrap overflow-x-auto`}>
                   {renderMessage(message)}
                 </div>
               </div>
             ))}
             {currentAIResponse && (
               <div className="flex justify-start">
-                <div className="max-w-3/4 p-3 rounded-lg bg-gray-200 text-gray-800 break-words whitespace-pre-wrap">
+                <div className="max-w-3/4 p-3 rounded-lg bg-gray-200 text-gray-800 break-words whitespace-pre-wrap overflow-x-auto">
                   {renderMessage({ text: currentAIResponse, isUser: false })}
                 </div>
               </div>
