@@ -1,0 +1,39 @@
+@startuml
+skinparam componentStyle uml2
+skinparam component {
+    BackgroundColor #2C5773
+    FontColor white
+    BorderColor Black
+}
+
+package "Core System" {
+    [Model Manager] as model_mgr
+    [Plan Validator] as validator
+    [Web Server] as web
+    database "Model Registry" as model_db
+}
+
+package "External Interfaces" {
+    [Interface Adapter] as adapter
+    [Message Converter] as converter
+}
+
+cloud "External Systems" {
+    [ROS2 Bridge] as ros2
+    [REST Clients] as rest
+    [WebSocket Clients] as ws
+}
+
+' Connections
+model_mgr --> model_db
+validator --> model_mgr
+web --> model_mgr
+adapter --> model_mgr
+adapter --> validator
+converter --> adapter
+
+ros2 ..> converter : "via messages"
+rest ..> web : "via HTTP"
+ws ..> web : "via WebSocket"
+
+@enduml 

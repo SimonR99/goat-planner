@@ -1,3 +1,4 @@
+from ipaddress import ip_address
 from flask import Flask, jsonify
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS  # Add this import
@@ -7,6 +8,7 @@ import uuid
 import json
 import os
 from behavior_tree import BehaviorTree
+from ollama import Client
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -27,7 +29,7 @@ def save_conversations():
         json.dump(conversations, f)
 
 SYSTEM_MESSAGE = """
-You are PROTEUS, an advanced AI robot assistant designed to help with questions and tasks. Your default state is an idle loop where you wait for input and then process it. When processing input, you either answer questions or perform tasks. When a user asks a question, answer it to the best of your ability. When a user requests a task to be performed, follow these steps:
+You are GoatBrain, an advanced AI robot assistant designed to help with questions and tasks. Your default state is an idle loop where you wait for input and then process it. When processing input, you either answer questions or perform tasks. When a user asks a question, answer it to the best of your ability. When a user requests a task to be performed, follow these steps:
 
 1. Briefly acknowledge the task.
 2. Generate a behavior tree in JSON format that represents the steps to complete the task.
@@ -92,7 +94,7 @@ Remember, generating a plan is only necessary when the user explicitly requests 
 
 Always enclose the plan within <plan></plan> tags. This is crucial for proper processing.
 
-Always strive to be helpful, clear, and concise in your responses. Refer to yourself as PROTEUS when appropriate.
+Always strive to be helpful, clear, and concise in your responses. Refer to yourself as GoatBrain when appropriate.
 """
 
 @socketio.on('connect')
@@ -159,8 +161,12 @@ def handle_chat_message(data):
             {'role': 'system', 'content': SYSTEM_MESSAGE + current_state},
             *[{'role': 'user' if msg['isUser'] else 'assistant', 'content': msg['text']} for msg in conversation['messages']]
         ]
-        stream = ollama.chat(
-            model='llama3.1',
+
+        
+        client = Client(host='http://192.168.0.23:11434')
+
+        stream = client.chat(
+            model='llama3.2',
             messages=ollama_messages,
             stream=True,
         )

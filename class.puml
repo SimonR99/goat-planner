@@ -1,0 +1,58 @@
+@startuml
+' Core System
+abstract class BaseModel {
+    +load()
+    +predict()
+    +get_capabilities()
+}
+
+class ModelManager {
+    -current_model: BaseModel
+    -model_registry: Dict
+    +switch_model(model_name: str)
+    +query(input: str): str
+    +validate_plan(plan: Dict): bool
+}
+
+class PlanValidator {
+    +validate_json(plan: Dict): bool
+    +validate_structure(plan: Dict): bool
+}
+
+class WebServer {
+    +start()
+    +stop()
+    +handle_request()
+}
+
+' Interface Layer
+interface ExternalInterface {
+    +connect()
+    +disconnect()
+    +send_message()
+    +receive_message()
+}
+
+class InterfaceAdapter {
+    -model_manager: ModelManager
+    -validator: PlanValidator
+    +process_request(request: Dict): Dict
+    +format_response(response: Dict): Dict
+}
+
+class MessageConverter {
+    +to_external_format(internal_msg: Dict): Any
+    +to_internal_format(external_msg: Any): Dict
+}
+
+' Relationships
+BaseModel <|-- LLMModel
+ModelManager o-- BaseModel
+ModelManager --> PlanValidator
+WebServer --> ModelManager
+InterfaceAdapter --> ModelManager
+InterfaceAdapter --> PlanValidator
+MessageConverter --> InterfaceAdapter
+ExternalInterface <|.. InterfaceAdapter
+
+@enduml 

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<root>
+    <TreeNodesModel>
+        <!-- Condition Nodes -->
+        <Condition ID="CAmIHungry">
+            <!-- Define input/output ports if any -->
+        </Condition>
+        <Condition ID="CDoIHaveFood">
+            <!-- Define input/output ports if any -->
+        </Condition>
+
+        <!-- Action Nodes -->
+        <Action ID="AEnemiesNotAround">
+            <!-- Define input/output ports if any -->
+        </Action>
+        <Action ID="AEatFood">
+            <!-- Define input/output ports if any -->
+        </Action>
+    </TreeNodesModel>
+</root>
