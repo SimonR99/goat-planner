@@ -1,4 +1,6 @@
 string target
+float32 x
+float32 y
 ---
 bool success
 string message 

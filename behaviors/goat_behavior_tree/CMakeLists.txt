@@ -15,6 +15,8 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(ament_index_cpp REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(nav2_common REQUIRED)
 
 # Generate interfaces
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -25,7 +27,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/RequestAssistance.srv"
   "srv/Wait.srv"
   "srv/ExecuteCommand.srv"
-  DEPENDENCIES geometry_msgs
+  DEPENDENCIES geometry_msgs nav2_msgs
 )
 
 # Include directories

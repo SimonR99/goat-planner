@@ -20,7 +20,14 @@ class NavigateToAction : public BT::SyncActionNode
 public:
     NavigateToAction(const std::string& name, const BT::NodeConfiguration& config);
     BT::NodeStatus tick() override;
-    static BT::PortsList providedPorts();
+    static BT::PortsList providedPorts()
+    {
+        return { 
+            BT::InputPort<std::string>("target", "Target location name"),
+            BT::InputPort<double>("x", "Target X coordinate"),
+            BT::InputPort<double>("y", "Target Y coordinate")
+        };
+    }
 private:
     rclcpp::Node::SharedPtr node_;
     rclcpp::Client<goat_behavior_tree::srv::NavigateTo>::SharedPtr client_;

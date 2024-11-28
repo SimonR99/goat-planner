@@ -13,7 +13,11 @@ NavigateToAction::NavigateToAction(const std::string& name, const BT::NodeConfig
 BT::NodeStatus NavigateToAction::tick()
 {
     auto request = std::make_shared<goat_behavior_tree::srv::NavigateTo::Request>();
+    
+    // Get input ports
     request->target = getInput<std::string>("target").value();
+    request->x = getInput<double>("x").value();
+    request->y = getInput<double>("y").value();
 
     auto future = client_->async_send_request(request);
     
@@ -26,11 +30,6 @@ BT::NodeStatus NavigateToAction::tick()
         }
     }
     return BT::NodeStatus::FAILURE;
-}
-
-BT::PortsList NavigateToAction::providedPorts()
-{
-    return { BT::InputPort<std::string>("target") };
 }
 
 PickAction::PickAction(const std::string& name, const BT::NodeConfiguration& config)
