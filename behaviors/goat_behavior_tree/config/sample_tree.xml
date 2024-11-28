@@ -1,0 +1,11 @@
+<root main_tree_to_execute="MainTree">
+    <BehaviorTree ID="MainTree">
+        <Sequence name="root_sequence">
+            <NavigateTo target="kitchen"/>
+            <LocateObject object="cup"/>
+            <Pick object="cup"/>
+            <NavigateTo target="living_room"/>
+            <Place object="cup" location="table"/>
+        </Sequence>
+    </BehaviorTree>
+</root> 
