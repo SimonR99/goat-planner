@@ -26,7 +26,71 @@ private:
     rclcpp::Client<goat_behavior_tree::srv::NavigateTo>::SharedPtr client_;
 };
 
-// Similar declarations for other action nodes...
+class PickAction : public BT::SyncActionNode
+{
+public:
+    PickAction(const std::string& name, const BT::NodeConfiguration& config);
+    BT::NodeStatus tick() override;
+    static BT::PortsList providedPorts();
+private:
+    rclcpp::Node::SharedPtr node_;
+    rclcpp::Client<goat_behavior_tree::srv::Pick>::SharedPtr client_;
+};
+
+class PlaceAction : public BT::SyncActionNode
+{
+public:
+    PlaceAction(const std::string& name, const BT::NodeConfiguration& config);
+    BT::NodeStatus tick() override;
+    static BT::PortsList providedPorts();
+private:
+    rclcpp::Node::SharedPtr node_;
+    rclcpp::Client<goat_behavior_tree::srv::Place>::SharedPtr client_;
+};
+
+class LocateObjectAction : public BT::SyncActionNode
+{
+public:
+    LocateObjectAction(const std::string& name, const BT::NodeConfiguration& config);
+    BT::NodeStatus tick() override;
+    static BT::PortsList providedPorts();
+private:
+    rclcpp::Node::SharedPtr node_;
+    rclcpp::Client<goat_behavior_tree::srv::LocateObject>::SharedPtr client_;
+};
+
+class RequestAssistanceAction : public BT::SyncActionNode
+{
+public:
+    RequestAssistanceAction(const std::string& name, const BT::NodeConfiguration& config);
+    BT::NodeStatus tick() override;
+    static BT::PortsList providedPorts();
+private:
+    rclcpp::Node::SharedPtr node_;
+    rclcpp::Client<goat_behavior_tree::srv::RequestAssistance>::SharedPtr client_;
+};
+
+class WaitAction : public BT::SyncActionNode
+{
+public:
+    WaitAction(const std::string& name, const BT::NodeConfiguration& config);
+    BT::NodeStatus tick() override;
+    static BT::PortsList providedPorts();
+private:
+    rclcpp::Node::SharedPtr node_;
+    rclcpp::Client<goat_behavior_tree::srv::Wait>::SharedPtr client_;
+};
+
+class ExecuteCommandAction : public BT::SyncActionNode
+{
+public:
+    ExecuteCommandAction(const std::string& name, const BT::NodeConfiguration& config);
+    BT::NodeStatus tick() override;
+    static BT::PortsList providedPorts();
+private:
+    rclcpp::Node::SharedPtr node_;
+    rclcpp::Client<goat_behavior_tree::srv::ExecuteCommand>::SharedPtr client_;
+};
 
 }  // namespace goat_bt
 

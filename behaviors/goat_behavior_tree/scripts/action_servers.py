@@ -35,60 +35,95 @@ class RobotActionServers(Node):
         self.get_logger().info('Action servers are ready')
 
     def navigate_to_callback(self, request, response):
-        self.get_logger().info(f'Navigating to: {request.target}')
-        # Implement your navigation logic here
+        self.get_logger().info('='*50)
+        self.get_logger().info(f'🤖 Robot is navigating to: {request.target}')
+        self.get_logger().info('Moving...')
+        time.sleep(2)  # Simulate movement
+        self.get_logger().info(f'✅ Arrived at {request.target}!')
+        self.get_logger().info('='*50)
         response.success = True
         response.message = f"Successfully navigated to {request.target}"
         return response
 
     def pick_callback(self, request, response):
-        self.get_logger().info(f'Picking object: {request.object}')
-        # Implement your pick logic here
+        self.get_logger().info('='*50)
+        self.get_logger().info(f'🤖 Robot is picking up: {request.object}')
+        self.get_logger().info('Extending arm...')
+        time.sleep(1)
+        self.get_logger().info('Grasping object...')
+        time.sleep(1)
+        self.get_logger().info(f'✅ Successfully picked up {request.object}!')
+        self.get_logger().info('='*50)
         response.success = True
         response.message = f"Successfully picked {request.object}"
         return response
 
     def place_callback(self, request, response):
-        self.get_logger().info(f'Placing {request.object} at {request.location}')
-        # Implement your place logic here
+        self.get_logger().info('='*50)
+        self.get_logger().info(f'🤖 Robot is placing {request.object} at {request.location}')
+        self.get_logger().info('Extending arm...')
+        time.sleep(1)
+        self.get_logger().info('Releasing object...')
+        time.sleep(1)
+        self.get_logger().info(f'✅ Successfully placed {request.object} at {request.location}!')
+        self.get_logger().info('='*50)
         response.success = True
         response.message = f"Successfully placed {request.object} at {request.location}"
         return response
 
     def locate_object_callback(self, request, response):
-        self.get_logger().info(f'Locating object: {request.object}')
-        # Implement your object location logic here
+        self.get_logger().info('='*50)
+        self.get_logger().info(f'🤖 Robot is searching for: {request.object}')
+        self.get_logger().info('Scanning environment...')
+        time.sleep(2)
+        self.get_logger().info(f'✅ Found {request.object}!')
+        self.get_logger().info('='*50)
         response.success = True
         response.message = f"Found {request.object}"
-        response.pose = Pose()  # Fill with actual pose data
+        # Set a dummy pose
+        response.pose = Pose()
+        response.pose.position.x = 1.0
+        response.pose.position.y = 1.0
+        response.pose.position.z = 0.0
         return response
 
     def request_assistance_callback(self, request, response):
-        self.get_logger().info(f'Requesting assistance for: {request.task}')
-        # Implement your assistance request logic here
+        self.get_logger().info('='*50)
+        self.get_logger().info(f'🤖 Robot needs help with: {request.task}')
+        self.get_logger().info('Sending notification...')
+        time.sleep(1)
+        self.get_logger().info('✅ Assistance request sent!')
+        self.get_logger().info('='*50)
         response.success = True
         response.message = f"Assistance requested for {request.task}"
         return response
 
     def wait_callback(self, request, response):
-        self.get_logger().info(f'Waiting for {request.duration} seconds')
+        self.get_logger().info('='*50)
+        self.get_logger().info(f'🤖 Robot is waiting for {request.duration} seconds')
         time.sleep(request.duration)
+        self.get_logger().info('✅ Wait completed!')
+        self.get_logger().info('='*50)
         response.success = True
         response.message = f"Waited for {request.duration} seconds"
         return response
 
     def execute_command_callback(self, request, response):
-        self.get_logger().info(f'Executing command: {request.command}')
+        self.get_logger().info('='*50)
+        self.get_logger().info(f'🤖 Robot is executing command: {request.command}')
         try:
             result = subprocess.run(request.command, shell=True, 
                                   capture_output=True, text=True)
             response.success = result.returncode == 0
             response.output = result.stdout
-            response.message = "Command executed successfully" if response.success else "Command failed"
+            self.get_logger().info(f'Command output: {result.stdout}')
+            self.get_logger().info('✅ Command executed successfully!')
         except Exception as e:
             response.success = False
             response.message = str(e)
             response.output = ""
+            self.get_logger().error(f'❌ Command failed: {str(e)}')
+        self.get_logger().info('='*50)
         return response
 
 def main():

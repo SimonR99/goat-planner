@@ -7,14 +7,16 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclpy REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
-find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
-# Generate interfaces before anything else
+# Generate interfaces
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/NavigateTo.srv"
   "srv/Pick.srv"
@@ -37,7 +39,6 @@ add_library(goat_bt_nodes SHARED
   src/action_nodes.cpp
 )
 
-# Ensure the service headers are generated before building the nodes
 rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
 target_link_libraries(goat_bt_nodes "${cpp_typesupport_target}")
 
@@ -58,8 +59,10 @@ target_link_libraries(goat_bt_main
 ament_target_dependencies(goat_bt_main
   rclcpp
   behaviortree_cpp_v3
+  ament_index_cpp
 )
 
+# Install C++ targets
 install(TARGETS
   goat_bt_nodes
   goat_bt_main
@@ -68,20 +71,27 @@ install(TARGETS
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
+# Install directories
 install(DIRECTORY
   include/
-  launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(DIRECTORY
   config
   DESTINATION share/${PROJECT_NAME}
 )
 
-# Python setup
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
-install(DIRECTORY
-  goat_behavior_tree
-  DESTINATION lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages/
+# Python setup for scripts module
+ament_python_install_package(scripts)
+
+# Install Python scripts
+install(PROGRAMS
+  scripts/action_servers.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
+# Linting and tests
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
