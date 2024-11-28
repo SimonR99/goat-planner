@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="MainTree">
+    <BehaviorTree ID="MainTree">
+        <!-- Navigate to a specific pose -->
+        <Sequence name="NavigateToPose">
+            <!-- Set the target pose -->
+            <SetBlackboard output_key="goal_pose">
+                {x: 3.0, y: 4.0, z: 0.0, qx: 0.0, qy: 0.0, qz: 0.0, qw: 1.0}
+            </SetBlackboard>
+
+            <!-- Navigate using the Nav2 system -->
+            <NavigateToPose goal="{goal_pose}" />
+        </Sequence>
+    </BehaviorTree>
+</root>

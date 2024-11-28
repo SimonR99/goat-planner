@@ -31,6 +31,7 @@ setup(
             'assist_server = scripts.assist_server:main',
             'wait_server = scripts.wait_server:main',
             'execute_server = scripts.execute_server:main',
+            'test_navigate = test.test_navigate:main',
         ],
     },
 ) 
