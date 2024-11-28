@@ -168,3 +168,8 @@ models/wandb/*
 wandb/*
 training/llama-3.2-3b-it-Ecommerce-ChatBot/*
 training/wandb/*
+
+# ROS2
+behaviors/install/*
+behaviors/build/*
+behaviors/log/*
