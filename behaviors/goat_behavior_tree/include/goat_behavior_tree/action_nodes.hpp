@@ -15,11 +15,12 @@
 namespace goat_bt
 {
 
-class NavigateToAction : public BT::SyncActionNode
+class NavigateToAction : public BT::AsyncActionNode
 {
 public:
     NavigateToAction(const std::string& name, const BT::NodeConfiguration& config);
     BT::NodeStatus tick() override;
+    void halt() override;
     static BT::PortsList providedPorts()
     {
         return { 
@@ -31,6 +32,9 @@ public:
 private:
     rclcpp::Node::SharedPtr node_;
     rclcpp::Client<goat_behavior_tree::srv::NavigateTo>::SharedPtr client_;
+    rclcpp::executors::SingleThreadedExecutor executor_;
+    std::shared_future<typename goat_behavior_tree::srv::NavigateTo::Response::SharedPtr> future_response_;
+    bool aborted_;
 };
 
 class PickAction : public BT::SyncActionNode

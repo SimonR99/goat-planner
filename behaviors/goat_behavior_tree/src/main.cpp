@@ -7,6 +7,7 @@
 int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
+    auto node = std::make_shared<rclcpp::Node>("goat_bt_main");
     
     BT::BehaviorTreeFactory factory;
     
@@ -27,11 +28,21 @@ int main(int argc, char * argv[])
         // Create the behavior tree from XML
         auto tree = factory.createTreeFromFile(bt_xml_path);
         
-        // Execute the tree
-        tree.tickRoot();
+        rclcpp::Rate rate(10);  // 10Hz
+        BT::NodeStatus status;
+        
+        RCLCPP_INFO(node->get_logger(), "Starting behavior tree execution...");
+        
+        do {
+            status = tree.tickRoot();
+            rate.sleep();
+        } while (status == BT::NodeStatus::RUNNING && rclcpp::ok());
+        
+        RCLCPP_INFO(node->get_logger(), "Behavior tree finished with status: %s", 
+                   status == BT::NodeStatus::SUCCESS ? "SUCCESS" : "FAILURE");
         
     } catch (const std::exception& e) {
-        RCLCPP_ERROR(rclcpp::get_logger("goat_bt_main"), "Failed to load or execute behavior tree: %s", e.what());
+        RCLCPP_ERROR(node->get_logger(), "Failed to load or execute behavior tree: %s", e.what());
         return 1;
     }
     

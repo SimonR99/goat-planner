@@ -63,7 +63,7 @@ def generate_launch_description():
 
     # Wrap the BT node in a timer to delay its start
     delayed_bt_node = TimerAction(
-        period=2.0,  # 2 second delay
+        period=3.0,  # 2 second delay
         actions=[bt_node]
     )
 

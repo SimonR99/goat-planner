@@ -2,11 +2,11 @@
 <root main_tree_to_execute="MainTree">
     <BehaviorTree ID="MainTree">
         <Sequence name="root_sequence">
-            <NavigateTo target="kitchen" x="2.0" y="4.0"/>
-            <LocateObject object="cup"/>
-            <Pick object="cup"/>
-            <NavigateTo target="living_room" x="-1.0" y="2.0"/>
-            <Place object="cup" location="table"/>
+            <NavigateTo target="kitchen" x="2.0" y="4.0" />
+            <LocateObject object="cup" />
+            <Pick object="cup" />
+            <NavigateTo target="living_room" x="0.0" y="0.0" />
+            <Place object="cup" location="table" />
         </Sequence>
     </BehaviorTree>
 </root> 
