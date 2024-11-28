@@ -82,12 +82,23 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
 # Python setup for scripts module
 ament_python_install_package(scripts)
 
 # Install Python scripts
 install(PROGRAMS
-  scripts/action_servers.py
+  scripts/assist_server.py
+  scripts/execute_server.py
+  scripts/locate_server.py
+  scripts/navigate_server.py
+  scripts/pick_server.py
+  scripts/place_server.py
+  scripts/wait_server.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
