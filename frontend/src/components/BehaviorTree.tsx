@@ -10,7 +10,6 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import io from "socket.io-client";
-import dagre from "dagre";
 import {
   FaBolt, // lightning for action
   FaQuestion, // question mark for fallback
@@ -65,15 +64,11 @@ const getNodeIcon = (type: NodeType) => {
 // Custom node types
 const CustomNode: React.FC<NodeProps> = ({ data }) => {
   return (
-    <div
-      className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-gray-200"
-      style={{ width: "200px", maxWidth: "200px" }}
-    >
+    <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-gray-200" 
+         style={{ width: '200px', maxWidth: '200px' }}>
       <Handle type="target" position={Position.Top} className="w-2 h-2" />
       <div className="flex items-center gap-2">
-        <div className="text-xl flex-shrink-0">
-          {getNodeIcon(data.type as NodeType)}
-        </div>
+        <div className="text-xl flex-shrink-0">{getNodeIcon(data.type as NodeType)}</div>
         <div className="text-sm font-bold break-words overflow-hidden">
           {data.label}
         </div>
@@ -113,13 +108,37 @@ const BehaviorTree: React.FC = () => {
     const edges: Edge[] = [];
     let nodeId = 0;
 
-    const traverseTree = (node: any, parentId: string | null) => {
+    // First pass: calculate the width needed for each subtree
+    const calculateSubtreeWidth = (node: any): number => {
+      if (!node.children || node.children.length === 0) {
+        return 1;
+      }
+      return node.children.reduce(
+        (sum: number, child: any) => sum + calculateSubtreeWidth(child),
+        0
+      );
+    };
+
+    // Second pass: position nodes
+    const processNode = (
+      node: any,
+      parentId: string | null,
+      level: number,
+      offsetX: number,
+      totalWidth: number
+    ): { id: string; width: number } => {
       const currentId = `node-${nodeId++}`;
+      const nodeWidth = calculateSubtreeWidth(node);
+      const xPosition = offsetX + (nodeWidth * totalWidth) / 2;
 
       // Create node
       nodes.push({
         id: currentId,
         type: "custom",
+        position: {
+          x: xPosition,
+          y: level * 150, // Vertical spacing between levels
+        },
         data: {
           label: node.name || "Unknown",
           type: node.type || "action",
@@ -128,7 +147,6 @@ const BehaviorTree: React.FC = () => {
             type: node.type,
           },
         },
-        position: { x: 0, y: 0 }, // Dagre will assign the correct position later
       });
 
       // Create edge from parent if exists
@@ -143,48 +161,38 @@ const BehaviorTree: React.FC = () => {
 
       // Process children
       if (node.children && node.children.length > 0) {
+        let currentOffset = offsetX;
         node.children.forEach((child: any) => {
-          traverseTree(child, currentId);
+          const childResult = processNode(
+            child,
+            currentId,
+            level + 1,
+            currentOffset,
+            totalWidth
+          );
+          currentOffset += childResult.width * totalWidth;
         });
       }
+
+      return { id: currentId, width: nodeWidth };
     };
 
-    // Start traversal
+    // Calculate total width needed and start processing
+    const totalNodes = calculateSubtreeWidth(treeData);
+    const horizontalSpacing = 250; // Increased to account for fixed node width
+    const totalWidth = horizontalSpacing;
+
     if (treeData.root && treeData.root.BehaviorTree) {
-      traverseTree(transformTreeData(treeData.root.BehaviorTree), null);
+      processNode(
+        transformTreeData(treeData.root.BehaviorTree),
+        null,
+        0,
+        0,
+        totalWidth
+      );
     } else {
-      traverseTree(transformTreeData(treeData), null);
+      processNode(transformTreeData(treeData), null, 0, 0, totalWidth);
     }
-
-    // Now apply Dagre layout
-    const dagreGraph = new dagre.graphlib.Graph();
-    dagreGraph.setDefaultEdgeLabel(() => ({}));
-
-    const isHorizontal = false; // For top-down layout
-    dagreGraph.setGraph({ rankdir: "TB" }); // Top to Bottom
-
-    const nodeWidth = 200;
-    const nodeHeight = 100;
-
-    nodes.forEach((node) => {
-      dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-    });
-
-    edges.forEach((edge) => {
-      dagreGraph.setEdge(edge.source, edge.target);
-    });
-
-    dagre.layout(dagreGraph);
-
-    nodes.forEach((node) => {
-      const nodeWithPosition = dagreGraph.node(node.id);
-      node.position = {
-        x: nodeWithPosition.x - nodeWidth / 2,
-        y: nodeWithPosition.y - nodeHeight / 2,
-      };
-      node.targetPosition = Position.Top;
-      node.sourcePosition = Position.Bottom;
-    });
 
     return { nodes, edges };
   };
