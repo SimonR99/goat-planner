@@ -163,7 +163,7 @@ def handle_chat_message(data):
         ]
 
         
-        client = Client(host='http://192.168.0.23:11434')
+        client = Client(host='http://0.0.0.0:11434')
 
         stream = client.chat(
             model='llama3.2',

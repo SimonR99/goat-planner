@@ -5,6 +5,10 @@ import { FaList, FaRandom, FaRedo, FaPlay } from 'react-icons/fa';
 
 const socket = io('http://localhost:5000');
 
+interface TreeNode {
+  [key: string]: any;
+}
+
 const BehaviorTree: React.FC = () => {
   const [treeData, setTreeData] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'json' | 'graph'>('graph');
@@ -56,12 +60,55 @@ const BehaviorTree: React.FC = () => {
 
   const validateTree = (tree: any): boolean => {
     if (!tree || typeof tree !== 'object') return false;
-    if (!('name' in tree)) return false;
-    if ('children' in tree) {
-      if (!Array.isArray(tree['children'])) return false;
-      return tree['children'].every(validateTree);
+    
+    // Check root structure
+    if ('root' in tree) {
+      const root = tree.root;
+      if (!root.main_tree_to_execute || !root.BehaviorTree) {
+        return false;
+      }
+      
+      // Validate BehaviorTree structure
+      const behaviorTree = root.BehaviorTree;
+      if (!behaviorTree.ID || behaviorTree.ID !== root.main_tree_to_execute) {
+        return false;
+      }
+      
+      // Recursively validate the rest of the tree
+      return Object.values(behaviorTree).every(node => {
+        if (typeof node === 'object' && node !== null) {
+          return validateNode(node);
+        }
+        return true;
+      });
     }
-    return true;
+    
+    // If not root, validate as a node
+    return validateNode(tree);
+  };
+
+  const validateNode = (node: any): boolean => {
+    if (!node || typeof node !== 'object') return false;
+    
+    // Check if it's a valid node structure
+    if ('children' in node) {
+      if (!Array.isArray(node.children)) return false;
+      return node.children.every(validateNode);
+    }
+    
+    // Recursively validate nested objects
+    return Object.values(node).every(value => {
+      if (typeof value === 'object' && value !== null) {
+        if (Array.isArray(value)) {
+          return value.every(item => {
+            if (typeof item === 'object') return validateNode(item);
+            return true;
+          });
+        }
+        return validateNode(value);
+      }
+      return true;
+    });
   };
 
   const handleJsonEdit = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -79,6 +126,56 @@ const BehaviorTree: React.FC = () => {
     }
   };
 
+  const transformTreeData = (node: TreeNode): any => {
+    // If this is the root node with BehaviorTree structure
+    if (node.root && node.root.BehaviorTree) {
+      return transformTreeData(node.root.BehaviorTree);
+    }
+
+    // Create a node object with name and children
+    const transformedNode: any = {
+      name: node.name || Object.keys(node)[0] || "Unknown",
+      type: getNodeType(node),
+      children: []
+    };
+
+    // Add all properties as attributes
+    Object.entries(node).forEach(([key, value]) => {
+      if (key !== 'children' && typeof value !== 'object') {
+        transformedNode[key] = value;
+      }
+    });
+
+    // Process children
+    Object.entries(node).forEach(([key, value]) => {
+      if (typeof value === 'object' && value !== null) {
+        if (Array.isArray(value)) {
+          // Handle array of children
+          value.forEach(child => {
+            if (typeof child === 'object') {
+              transformedNode.children.push(transformTreeData(child));
+            }
+          });
+        } else if (key !== 'name' && key !== 'type') {
+          // Handle nested objects as children
+          transformedNode.children.push(transformTreeData(value));
+        }
+      }
+    });
+
+    return transformedNode;
+  };
+
+  const getNodeType = (node: TreeNode): string => {
+    if ('RecoveryNode' in node) return 'recovery';
+    if ('PipelineSequence' in node) return 'sequence';
+    if ('ReactiveFallback' in node) return 'fallback';
+    if ('RateController' in node) return 'rate';
+    if ('ReactiveSequence' in node) return 'sequence';
+    if ('RoundRobin' in node) return 'round-robin';
+    return 'action';
+  };
+
   const renderCustomNodeElement = ({ nodeDatum, toggleNode }: any) => {
     let Icon;
     switch (nodeDatum.type) {
@@ -88,8 +185,14 @@ const BehaviorTree: React.FC = () => {
       case 'fallback':
         Icon = FaRandom;
         break;
-      case 'retry':
+      case 'recovery':
         Icon = FaRedo;
+        break;
+      case 'rate':
+        Icon = FaPlay;
+        break;
+      case 'round-robin':
+        Icon = FaRandom;
         break;
       default:
         Icon = FaPlay;
@@ -103,12 +206,37 @@ const BehaviorTree: React.FC = () => {
             <Icon color="#dc2626" size="20" />
           </div>
         </foreignObject>
-        <text fill="#dc2626" strokeWidth="1" x="25" y="5" textAnchor="start" alignmentBaseline="middle" fontSize="14">
+        <text 
+          fill="#dc2626" 
+          strokeWidth="1" 
+          x="25" 
+          y="5" 
+          textAnchor="start" 
+          alignmentBaseline="middle" 
+          fontSize="14"
+        >
           {nodeDatum.name}
         </text>
+        {/* Display additional attributes */}
+        {Object.entries(nodeDatum)
+          .filter(([key]) => !['name', 'type', 'children'].includes(key))
+          .map(([key, value], index) => (
+            <text
+              key={key}
+              fill="#666"
+              x="25"
+              y={25 + (index * 18)}
+              fontSize="12"
+            >
+              {`${key}: ${value}`}
+            </text>
+          ))}
       </g>
     );
   };
+
+  // Update the tree data before rendering
+  const processedTreeData = treeData ? transformTreeData(treeData) : null;
 
   if (error) {
     return <div className="text-red-600">{error}</div>;
@@ -144,7 +272,7 @@ const BehaviorTree: React.FC = () => {
         ) : (
           <div style={{ width: '100%', height: '100%', minHeight: '300px', overflow: 'hidden' }}>
             <Tree
-              data={treeData}
+              data={processedTreeData}
               orientation="vertical"
               pathFunc="step"
               translate={{ x: 300, y: 50 }}
