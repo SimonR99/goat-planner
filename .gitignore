@@ -173,3 +173,8 @@ training/wandb/*
 behaviors/install/*
 behaviors/build/*
 behaviors/log/*
+install/*
+log/*
+build/*
+.vscode/c_cpp_properties.json
+.vscode/settings.json

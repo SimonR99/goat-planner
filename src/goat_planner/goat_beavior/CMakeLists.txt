@@ -95,6 +95,7 @@ install(PROGRAMS
   scripts/place_service.py
   scripts/navigate_service.py
   scripts/shepherd_connector.py
+  scripts/goat_state_bridge.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -41,3 +41,11 @@ Clone the repository in your ROS2 workspace and build the package with colcon:
 ```bash
 colcon build --packages-select goat_behavior
 ```
+
+Now, you need to launch all the services available so that the behavior tree can be executed.
+
+```bash
+source install/setup.bash
+ros2 launch goat_behavior goat_behavior.launch.py
+```
+

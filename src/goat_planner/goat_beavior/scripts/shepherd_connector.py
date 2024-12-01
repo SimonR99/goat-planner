@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import os
 from typing import Dict, Tuple
 
@@ -13,7 +15,8 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image, PointCloud2
 from shepherd import Shepherd, ShepherdConfig
 from shepherd.utils.camera import CameraUtils
-from std_msgs.msg import Header
+from std_msgs.msg import Header, String
+import json
 
 
 class LiveVideoProcessor(Node):
@@ -118,6 +121,13 @@ class LiveVideoProcessor(Node):
         self.output_dir = os.path.join(os.path.dirname(__file__), "..", "demo")
         os.makedirs(self.output_dir, exist_ok=True)
 
+        # Add publisher for object detections
+        self.object_detection_pub = self.create_publisher(
+            String,
+            '/shepherd/object_detections',
+            10
+        )
+
     def pose_to_dict(self, pose_msg: Odometry) -> Dict:
         """Convert Odometry to dictionary"""
         return {
@@ -167,6 +177,17 @@ class LiveVideoProcessor(Node):
 
             # Process frame using Shepherd
             results = self.shepherd.process_frame(cv_image, cv_depth, camera_pose)
+            
+            # Debug log the raw results
+            self.get_logger().debug(f"Raw Shepherd results: {results}")
+
+            # Store depth for position calculation
+            for result in results:
+                if 'mask' in result:
+                    # Get depth values for the masked region
+                    masked_depth = cv_depth.copy()
+                    masked_depth[~result['mask']] = 0  # Zero out non-mask areas
+                    result['depth'] = masked_depth
 
             # Create visualization
             viz_frame = cv_image.copy()
@@ -247,6 +268,61 @@ class LiveVideoProcessor(Node):
                 # Close query input window
                 cv2.destroyWindow("Query Input")
 
+            # Publish detections
+            for result in results:
+                try:
+                    # Debug log each result
+                    self.get_logger().debug(f"Processing result: {result}")
+                    
+                    # Convert numpy arrays to lists for JSON serialization and handle None values
+                    bbox = [float(x) if x is not None else 0.0 for x in result['detection']['bbox']]
+                    
+                    # Get confidence with default value if None
+                    confidence = result['detection'].get('confidence')
+                    confidence = float(confidence) if confidence is not None else 0.0
+                    
+                    # Get similarity with default value if None
+                    similarity = result.get('similarity')
+                    similarity = float(similarity) if similarity is not None else 0.0
+                    
+                    # Extract caption - check both possible paths
+                    caption = None
+                    if 'metadata' in result and isinstance(result['metadata'], dict):
+                        caption = result['metadata'].get('caption')
+                    if not caption and 'caption' in result:
+                        caption = result['caption']
+                    if not caption:
+                        # Try to get the caption from the detection class
+                        caption = result['detection'].get('class', '')
+                    
+                    # Create detection message with safe values
+                    detection = {
+                        'object_id': result.get('object_id', ''),
+                        'metadata': {
+                            'caption': caption or ''  # Use empty string if caption is None
+                        },
+                        'detection': {
+                            'bbox': bbox,
+                            'confidence': confidence,
+                            'class': result['detection'].get('class', '')
+                        },
+                        'similarity': similarity,
+                        'position': self.get_object_position(result),
+                        'timestamp': self.get_clock().now().to_msg().sec
+                    }
+                    
+                    # Log the final detection
+                    self.get_logger().info(f"Publishing detection with caption: {caption}")
+                    
+                    # Publish detection
+                    msg = String()
+                    msg.data = json.dumps(detection)
+                    self.object_detection_pub.publish(msg)
+                    
+                except Exception as e:
+                    self.get_logger().error(f'Error publishing detection: {str(e)}')
+                    self.get_logger().error(f'Problematic result: {result}')
+
         except Exception as e:
             self.get_logger().error(f"Error processing frame: {str(e)}")
 
@@ -257,6 +333,13 @@ class LiveVideoProcessor(Node):
             results = self.shepherd.database.query_objects(
                 self.config.default_query, self.shepherd.embedder
             )
+
+            for result in results:
+                print(f"Object caption: {result['metadata']['caption']}")
+                point_cloud = result["point_cloud"]
+                if point_cloud is not None and len(point_cloud) > 0:
+                    position = np.mean(point_cloud, axis=0)
+                    print(f"Object position: {position}")
 
             if not results:
                 return
@@ -314,6 +397,60 @@ class LiveVideoProcessor(Node):
 
         except Exception as e:
             self.get_logger().error(f"Error publishing point clouds: {str(e)}")
+
+    def get_object_position(self, result):
+        """Extract object position from point cloud"""
+        try:
+            # First try to get point cloud directly
+            point_cloud = result.get('point_cloud')
+            if point_cloud is not None and len(point_cloud) > 0:
+                # Calculate centroid and convert to regular Python list
+                centroid = np.mean(point_cloud, axis=0)
+                return {
+                    'x': float(centroid[0]),
+                    'y': float(centroid[1]),
+                    'z': float(centroid[2])
+                }
+            
+            # If no point cloud, try to get position from detection
+            bbox = result.get('detection', {}).get('bbox')
+            if bbox is not None:
+                # Convert 2D bbox center to 3D using depth
+                x1, y1, x2, y2 = bbox
+                center_x = (x1 + x2) / 2
+                center_y = (y1 + y2) / 2
+                
+                # Get depth at center point if available
+                if 'depth' in result:
+                    depth = result['depth']
+                    if depth is not None:
+                        try:
+                            z = float(depth[int(center_y), int(center_x)])
+                            # Convert from camera coordinates to world coordinates
+                            # This is a simplified conversion - you might need to adjust based on your camera setup
+                            return {
+                                'x': float(center_x * z / self.config.camera.fx),
+                                'y': float(center_y * z / self.config.camera.fy),
+                                'z': float(z)
+                            }
+                        except (IndexError, ValueError) as e:
+                            self.get_logger().warning(f'Error getting depth: {e}')
+            
+            # If we have a pose, use it
+            pose = result.get('pose')
+            if pose is not None:
+                return {
+                    'x': float(pose.get('x', 0.0)),
+                    'y': float(pose.get('y', 0.0)),
+                    'z': float(pose.get('z', 0.0))
+                }
+                
+            self.get_logger().warning('No valid position data found in result')
+            
+        except Exception as e:
+            self.get_logger().error(f'Error calculating object position: {str(e)}')
+        
+        return {'x': 0.0, 'y': 0.0, 'z': 0.0}
 
 
 def main(args=None):
