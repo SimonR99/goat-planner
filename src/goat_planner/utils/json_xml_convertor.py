@@ -1,116 +1,66 @@
-import xml.etree.ElementTree as ET
 import json
+import xml.etree.ElementTree as ET
+from html import unescape
+from xml.dom.minidom import parseString
 
 
-def xml_to_json(xml_str):
-    def parse_element(element):
-        tag_data = {}
-        # Get attributes
-        if element.attrib:
-            tag_data.update(element.attrib)
-        # Recursively get children
-        children = list(element)
-        if children:
-            child_data = {}
-            for child in children:
-                child_dict = parse_element(child)
-                if child.tag not in child_data:
-                    child_data[child.tag] = child_dict
-                else:
-                    if isinstance(child_data[child.tag], list):
-                        child_data[child.tag].append(child_dict)
-                    else:
-                        child_data[child.tag] = [child_data[child.tag], child_dict]
-            tag_data.update(child_data)
-        else:
-            # If no children, add the text content
-            if element.text and element.text.strip():
-                tag_data['text'] = element.text.strip()
-        return tag_data
-
-    root = ET.fromstring(xml_str)
-    return json.dumps({root.tag: parse_element(root)}, indent=4)
-
-
-def json_to_xml(json_str):
-    def build_element(element_name, data):
-        element = ET.Element(element_name)
+def json_to_xml(json_obj, root_name="root"):
+    def build_xml_element(element, data):
         if isinstance(data, dict):
             for key, value in data.items():
-                if key == "text":
-                    element.text = value
-                elif isinstance(value, list):
-                    for item in value:
-                        child = build_element(key, item)
-                        element.append(child)
-                elif isinstance(value, dict):
-                    child = build_element(key, value)
-                    element.append(child)
-                else:
-                    element.set(key, value)
+                sub_element = ET.SubElement(element, key)
+                build_xml_element(sub_element, value)
         elif isinstance(data, list):
             for item in data:
-                child = build_element(element_name, item)
-                element.append(child)
+                sub_element = ET.SubElement(element, "item")
+                build_xml_element(sub_element, item)
         else:
             element.text = str(data)
-        return element
 
-    json_data = json.loads(json_str)
-    root_name, root_content = next(iter(json_data.items()))
-    root_element = build_element(root_name, root_content)
-    return ET.tostring(root_element, encoding='unicode')
+    root = ET.Element(root_name)
+    build_xml_element(root, json_obj)
+    xml_string = ET.tostring(
+        root, encoding="unicode"
+    )  # Use unicode to keep raw characters
+    pretty_xml = parseString(xml_string).toprettyxml(indent="  ")
+    return pretty_xml
 
 
-# Example Usage
-xml_input = """
-<root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
-    <RecoveryNode number_of_retries="0" name="NavigateRecovery">
-      <PipelineSequence name="NavigateWithReplanning">
-        <RateController hz="0.333">
-          <RecoveryNode number_of_retries="0" name="ComputePathThroughPoses">
-            <ReactiveSequence>
-              <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="1.5"/>
-              <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
-            </ReactiveSequence>
-            <ReactiveFallback name="ComputePathThroughPosesRecoveryFallback">
-              <GoalUpdated/>
-              <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
-            </ReactiveFallback>
-          </RecoveryNode>
-        </RateController>
-        <RecoveryNode number_of_retries="0" name="FollowPath">
-          <FollowPath path="{path}" controller_id="FollowPath"/>
-          <ReactiveFallback name="FollowPathRecoveryFallback">
-            <GoalUpdated/>
-            <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
-          </ReactiveFallback>
-        </RecoveryNode>
-      </PipelineSequence>
-      <ReactiveFallback name="RecoveryFallback">
-        <GoalUpdated/>
-        <RoundRobin name="RecoveryActions">
-          <Sequence name="ClearingActions">
-            <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
-          </Sequence>
-          <!-- <Spin spin_dist="1.57"/> -->
-          <Wait wait_duration="5"/>
-          <BackUp backup_dist="0.15" backup_speed="0.025"/>
-        </RoundRobin>
-      </ReactiveFallback>
-    </RecoveryNode>
-  </BehaviorTree>
-</root>
-"""
+def xml_to_json(xml_string):
+    def parse_element(element):
+        child_elements = list(element)
+        if not child_elements:
+            return (
+                unescape(element.text.strip()) if element.text else None
+            )  # Decode entities
+        result = {}
+        for child in child_elements:
+            if child.tag == "item":  # Handle lists
+                result.setdefault(child.tag, [])
+                result[child.tag].append(parse_element(child))
+            else:
+                result[child.tag] = parse_element(child)
+        return result
 
-# Convert XML to JSON
-json_output = xml_to_json(xml_input)
-print("JSON Output:")
-print(json_output)
+    root = ET.fromstring(xml_string)
+    return {root.tag: parse_element(root)}
 
-# Convert JSON back to XML
-xml_output = json_to_xml(json_output)
-print("\nXML Output:")
-print(xml_output)
+
+# Test Example
+if __name__ == "__main__":
+    json_data = {
+        "person": {
+            "name": 'John "Doe"',
+            "age": 30,
+            "hobbies": ['reading "books"', "cycling"],
+            "address": {"city": "New York", "zipcode": "10001"},
+        }
+    }
+
+    print("JSON to XML:")
+    xml_output = json_to_xml(json_data)
+    print(xml_output)
+
+    print("XML to JSON:")
+    back_to_json = xml_to_json(xml_output)
+    print(json.dumps(back_to_json, indent=2))
