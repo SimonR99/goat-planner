@@ -1,13 +1,38 @@
-# GoatBrain
+# Goat Planner: Robot Control with LLM
 
-GoatBrain is a system for planning and executing complex behaviors for autonomous robots.The system uses a fined-tuned version of the LLaMA3 language model to plan and execute behaviors.
+Goat Planner is a modular project for controlling robots using a language model (LLM). It integrates ROS2 for compatibility while maintaining the ability to run independently, ensuring flexibility for both simulated and real-world environments. The LLM used is a fine-tuned version of LLaMA3 that has been trained to generate behavior trees.
 
-## Components
+## Features
 
-### ROS2 Bridge
+- Language Model Integration: Uses a fine-tuned Ollama model for task planning.
+- Generate plans compatible with BehaviorTree.CPP
+- ROS2 integration with distributed nodes
+- Real-time pipeline.
+- Web Interface: React-based frontend for user query and plan visualization.
+- Voice capabilities: Speech-to-text and text-to-speech.
 
-GoatBrain can connect to ROS2 nodes and publish and subscribe to topics. 
+### Standalone installation
 
-### Web Server
+```bash
+git clone https://github.com/SimonR99/goat-planner.git
+cd goat-planner
+pip install -r requirements.txt
+pip install -e .
+```
 
-The web server can be used to communicate with the model and create behavior tree.
+### Run the web interface
+
+```bash
+cd src/frontend
+npm install
+npm start
+```
+
+
+### ROS2 integration
+
+Clone the repository in your ROS2 workspace and build the package with colcon:
+
+```bash
+colcon build --packages-select goat_behavior
+```

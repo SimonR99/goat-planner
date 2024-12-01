@@ -1,0 +1,12 @@
+# pyproject.toml
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "goat_planner"
+version = "0.1.0"
+description = "Goat Planner is a tool to add autonomous capabilities to robots."
+requires-python = ">=3.8"
+dependencies = [
+]
