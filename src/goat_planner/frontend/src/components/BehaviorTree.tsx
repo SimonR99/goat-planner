@@ -95,7 +95,6 @@ const nodeTypes = {
 };
 
 const BehaviorTree: React.FC = () => {
-  // Add missing state variables
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -210,6 +209,13 @@ const BehaviorTree: React.FC = () => {
       console.log("Fetched behavior tree data:", data);
       setTreeData(data);
       setJsonText(JSON.stringify(data, null, 2));
+      
+      // Transform the data for graph view
+      if (data) {
+        const flowData = transformTreeToFlow(data);
+        setNodes(flowData.nodes);
+        setEdges(flowData.edges);
+      }
     } catch (error) {
       console.error("Error fetching behavior tree:", error);
       setError("Failed to fetch behavior tree. Please try again later.");
@@ -220,7 +226,10 @@ const BehaviorTree: React.FC = () => {
     fetchBehaviorTree();
 
     socket.on("plan_update", (updatedTree) => {
+      console.log("Received plan update:", updatedTree);
       if (validateTree(updatedTree)) {
+        setTreeData(updatedTree);
+        setJsonText(JSON.stringify(updatedTree, null, 2));
         const flowData = transformTreeToFlow(updatedTree);
         setNodes(flowData.nodes);
         setEdges(flowData.edges);
@@ -299,6 +308,9 @@ const BehaviorTree: React.FC = () => {
       const parsedJson = JSON.parse(newJsonText);
       if (validateTree(parsedJson)) {
         setTreeData(parsedJson);
+        const flowData = transformTreeToFlow(parsedJson);
+        setNodes(flowData.nodes);
+        setEdges(flowData.edges);
       } else {
         console.error("Invalid tree structure in JSON");
       }
@@ -394,6 +406,13 @@ const BehaviorTree: React.FC = () => {
             value={jsonText}
             onChange={handleJsonEdit}
             className="w-full h-full p-4 font-mono"
+            style={{ 
+              minHeight: "400px",
+              resize: "none",
+              whiteSpace: "pre",
+              overflowWrap: "normal",
+              overflowX: "auto"
+            }}
           />
         ) : (
           <div style={{ width: "100%", height: "800px" }}>
