@@ -121,5 +121,16 @@ def handle_request_world_state():
     emit("state_update", goat_controller.state.get_full_state())
 
 
+@socketio.on("toggle_tts")
+def handle_tts_toggle(data):
+    """Handle TTS toggle from frontend"""
+    enabled = data.get("enabled", False)
+    goat_controller.use_tts = enabled
+    if enabled:
+        goat_controller.enable_tts()
+    elif not enabled:
+        goat_controller.disable_tts()
+
+
 if __name__ == "__main__":
     socketio.run(app, debug=True)

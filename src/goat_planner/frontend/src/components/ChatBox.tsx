@@ -29,8 +29,6 @@ const ChatBox: React.FC = () => {
   const [currentAIResponse, setCurrentAIResponse] = useState<string>('');
   const [isReceivingPlan, setIsReceivingPlan] = useState(false);
   const [isTTSEnabled, setIsTTSEnabled] = useState(false);
-  const [ttsBuffer, setTtsBuffer] = useState('');
-  const ttsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     socket.on('connect', () => {
@@ -69,7 +67,6 @@ const ChatBox: React.FC = () => {
           }
           if (!isReceivingPlan && newContent) {
             setCurrentAIResponse(prev => prev + newContent);
-            speak(newContent);
           }
         }
       }
@@ -181,29 +178,10 @@ const ChatBox: React.FC = () => {
     return parts.length > 0 ? parts : processedText;
   };
 
-  const speak = (text: string) => {
-    if ('speechSynthesis' in window && isTTSEnabled) {
-      setTtsBuffer(prevBuffer => prevBuffer + ' ' + text);
-
-      if (ttsTimeoutRef.current) {
-        clearTimeout(ttsTimeoutRef.current);
-      }
-
-      ttsTimeoutRef.current = setTimeout(() => {
-        const utterance = new SpeechSynthesisUtterance(ttsBuffer);
-        window.speechSynthesis.speak(utterance);
-        setTtsBuffer('');
-      }, 1000); // Adjust this delay as needed
-    }
+  const handleTTSToggle = (enabled: boolean) => {
+    setIsTTSEnabled(enabled);
+    socket.emit('toggle_tts', { enabled });
   };
-
-  useEffect(() => {
-    return () => {
-      if (ttsTimeoutRef.current) {
-        clearTimeout(ttsTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return (
     <div className="flex flex-col h-full">
@@ -223,7 +201,7 @@ const ChatBox: React.FC = () => {
             <input
               type="checkbox"
               checked={isTTSEnabled}
-              onChange={(e) => setIsTTSEnabled(e.target.checked)}
+              onChange={(e) => handleTTSToggle(e.target.checked)}
               className="mr-2"
             />
             Enable Text-to-Speech

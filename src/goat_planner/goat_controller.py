@@ -97,7 +97,9 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
 
         # TTS setup
         self.use_tts = use_tts
-        self.tts = TextToSpeech() if use_tts else None
+        self.tts = None  # Initialize TTS only when needed
+        if use_tts:
+            self.enable_tts()
 
     @property
     def conversations(self):
@@ -295,3 +297,14 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         self.state.update_object(obj_id, obj_type, position, properties)
         if self.on_state_update_callback:
             self.on_state_update_callback(self.state.get_full_state())
+
+    def enable_tts(self):
+        """Enable TTS if not already enabled"""
+        if not self.tts:
+            self.tts = TextToSpeech()
+        self.use_tts = True
+
+    def disable_tts(self):
+        """Disable TTS"""
+        self.tts = None
+        self.use_tts = False
