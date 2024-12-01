@@ -113,13 +113,8 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
 
     def delete_conversation(self, conversation_id: str) -> bool:
         initial_length = len(self.conversations)
-        self.state.conversations = [
-            conv for conv in self.conversations if conv["id"] != conversation_id
-        ]
-        if len(self.conversations) < initial_length:
-            self.state._save_conversations()
-            return True
-        return False
+        self.state.delete_conversation(conversation_id)
+        return len(self.conversations) < initial_length
 
     def get_behavior_tree(self) -> Dict:
         return self.behavior_tree.get_tree()

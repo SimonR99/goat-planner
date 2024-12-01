@@ -103,4 +103,13 @@ class GoatState:
     def clear_objects(self) -> None:
         """Clear all objects from the world state"""
         self.state.objects = {}
-        self.state.last_updated = datetime.now().isoformat() 
+        self.state.last_updated = datetime.now().isoformat()
+
+    def delete_conversation(self, conversation_id: str) -> None:
+        """Delete a conversation by its ID"""
+        self.state.conversations = [
+            conv for conv in self.state.conversations 
+            if conv["id"] != conversation_id
+        ]
+        self._save_conversations()
+  
