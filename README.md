@@ -28,6 +28,11 @@ npm install
 npm start
 ```
 
+### Run the CLI chat
+
+```bash
+python -m goat_planner.cli_chat --tts
+```
 
 ### ROS2 integration
 
