@@ -125,7 +125,9 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         return len(self.conversations) < initial_length
 
     def get_behavior_tree(self) -> Dict:
-        return self.behavior_tree.get_tree()
+        """Get the current behavior tree from database"""
+        # Get the tree from the database instead of memory
+        return self.state.get_behavior_tree()
 
     def process_message(
         self, conversation_id: str, message: str, context: Optional[Dict] = None
@@ -258,8 +260,11 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
 
             plan_data = json.loads(clean_json)
 
-            # Update the behavior tree
+            # Update both the behavior tree and state
             if self.behavior_tree.update_tree(plan_data):
+                # Store the plan in the database through GoatState
+                self.state.update_behavior_tree(plan_data)
+                
                 # Notify listeners about the plan update
                 if self.on_plan_update_callback:
                     self.on_plan_update_callback(self.behavior_tree.get_tree())

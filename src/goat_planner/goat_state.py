@@ -53,9 +53,11 @@ class GoatState:
         # Initialize database
         self._setup_database()
         
-        # Initialize behavior tree and conversations
+        # Initialize behavior tree
         self.behavior_tree = {}
-        self.conversations = []
+        
+        # Load conversations from database
+        self._load_conversations()
 
     def _get_connection(self):
         """Create a new database connection"""
@@ -172,12 +174,12 @@ class GoatState:
             
             with self._get_connection() as conn:
                 cursor = conn.cursor()
+                cursor.execute('DELETE FROM behavior_tree WHERE id = ?', ('current',))
                 cursor.execute('''
-                    INSERT OR REPLACE INTO behavior_tree 
+                    INSERT INTO behavior_tree 
                     (id, tree, last_updated)
                     VALUES (?, ?, ?)
                 ''', ('current', tree_json, timestamp))
-                
                 conn.commit()
         except Exception as e:
             print(f"Error updating behavior tree in database: {e}")
@@ -189,8 +191,12 @@ class GoatState:
                 cursor = conn.cursor()
                 cursor.execute('SELECT tree FROM behavior_tree WHERE id = ?', ('current',))
                 row = cursor.fetchone()
-                if row:
+                
+                if row and row[0]:
                     self.behavior_tree = json.loads(row[0])
+                else:
+                    self.behavior_tree = {}
+                    
                 return self.behavior_tree
         except Exception as e:
             print(f"Error getting behavior tree from database: {e}")
@@ -211,6 +217,8 @@ class GoatState:
     # Add conversation methods back
     def get_conversations(self):
         """Get all conversations"""
+        # Ensure we have the latest conversations from the database
+        self._load_conversations()
         return self.conversations
 
     def add_conversation(self, conversation):
@@ -218,18 +226,71 @@ class GoatState:
         self.conversations.append(conversation)
         self._save_conversations()
 
-    def update_conversation(self, conversation_id, updates):
+    def update_conversation(self, conversation_id: str, updates: Dict):
         """Update an existing conversation"""
-        for conv in self.conversations:
-            if conv['id'] == conversation_id:
-                conv.update(updates)
-                break
-        self._save_conversations()
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # If we're updating the name
+                if 'name' in updates:
+                    cursor.execute('''
+                        UPDATE conversations 
+                        SET name = ?, last_updated = ?
+                        WHERE id = ?
+                    ''', (updates['name'], datetime.now().isoformat(), conversation_id))
+                
+                # If we're updating messages
+                if 'messages' in updates:
+                    cursor.execute('''
+                        UPDATE conversations 
+                        SET messages = ?, last_updated = ?
+                        WHERE id = ?
+                    ''', (json.dumps(updates['messages']), datetime.now().isoformat(), conversation_id))
+                
+                conn.commit()
+                
+                # Update in-memory state
+                for conv in self.conversations:
+                    if conv['id'] == conversation_id:
+                        conv.update(updates)
+                        break
+        except Exception as e:
+            print(f"Error updating conversation in database: {e}")
 
     def delete_conversation(self, conversation_id):
         """Delete a conversation"""
-        self.conversations = [c for c in self.conversations if c['id'] != conversation_id]
-        self._save_conversations()
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM conversations WHERE id = ?', (conversation_id,))
+                conn.commit()
+                
+                # Update in-memory state
+                self.conversations = [c for c in self.conversations if c['id'] != conversation_id]
+        except Exception as e:
+            print(f"Error deleting conversation from database: {e}")
+
+    def _load_conversations(self):
+        """Load conversations from database"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT id, name, messages, last_updated FROM conversations')
+                rows = cursor.fetchall()
+                
+                self.conversations = []
+                for row in rows:
+                    conversation = {
+                        'id': row[0],
+                        'name': row[1],
+                        'messages': json.loads(row[2]) if row[2] else [],
+                        'last_updated': row[3]
+                    }
+                    self.conversations.append(conversation)
+        except Exception as e:
+            print(f"Error loading conversations from database: {e}")
+            self.conversations = []
 
     def _save_conversations(self):
         """Save conversations to database"""
@@ -249,5 +310,5 @@ class GoatState:
                     ))
                 conn.commit()
         except Exception as e:
-            print(f"Error saving conversations: {e}")
+            print(f"Error saving conversations to database: {e}")
   
