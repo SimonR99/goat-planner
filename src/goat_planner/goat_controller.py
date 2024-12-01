@@ -82,7 +82,7 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         on_message_callback: Optional[Callable] = None,
         on_plan_update_callback: Optional[Callable] = None,
         on_state_update_callback: Optional[Callable] = None,
-        use_tts: bool = False
+        use_tts: bool = False,
     ):
 
         self.ollama_host = ollama_host
@@ -196,7 +196,7 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         in_plan = False
         plan_updated = False
         current_chunk = ""
-        
+
         for chunk in stream:
             content = chunk["message"]["content"]
             ai_response += content
@@ -206,19 +206,19 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
             if "<plan>" in content:
                 in_plan = True
                 plan_json = ""
-            elif "</plan>" in content:
-                in_plan = False
-                self._try_update_plan(plan_json)
-                plan_updated = True
 
             if in_plan:
                 plan_json += content.replace("<plan>", "").replace("</plan>", "")
 
+            if "</plan>" in content:
+                in_plan = False
+                if self._try_update_plan(plan_json):
+                    plan_updated = True
+
             # Send the chunk through callback
             if self.on_message_callback and current_chunk:
                 self.on_message_callback(
-                    conversation_id, 
-                    {"text": current_chunk, "isUser": False}
+                    conversation_id, {"text": current_chunk, "isUser": False}
                 )
                 current_chunk = ""
 
@@ -233,6 +233,17 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
             clean_text = ai_response.split("<plan>")[0].strip()
             self.tts.speak(clean_text)
 
+        # If no plan was found in streaming, try to extract it from complete response
+        if not plan_updated:
+            try:
+                start_idx = ai_response.find("<plan>")
+                end_idx = ai_response.find("</plan>")
+                if start_idx != -1 and end_idx != -1:
+                    plan_json = ai_response[start_idx + 6 : end_idx].strip()
+                    self._try_update_plan(plan_json)
+            except Exception as e:
+                print(f"Error extracting plan from complete response: {e}")
+
         return {
             "success": True,
             "response": ai_response,
@@ -240,14 +251,26 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         }
 
     def _try_update_plan(self, plan_json: str) -> bool:
+        """Try to parse and update the behavior tree from JSON string"""
         try:
-            plan_data = json.loads(plan_json)
+            # Clean up the plan JSON string
+            clean_json = plan_json.strip()
+            if not clean_json:
+                return False
+
+            plan_data = json.loads(clean_json)
+
+            # Update the behavior tree
             if self.behavior_tree.update_tree(plan_data):
+                # Notify listeners about the plan update
                 if self.on_plan_update_callback:
                     self.on_plan_update_callback(self.behavior_tree.get_tree())
                 return True
-        except json.JSONDecodeError:
-            pass
+
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse plan JSON: {e}")
+        except Exception as e:
+            print(f"Error updating plan: {e}")
         return False
 
     def _try_extract_plan(self, response: str) -> bool:
