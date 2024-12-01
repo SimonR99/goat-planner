@@ -7,6 +7,7 @@ from ollama import Client, ResponseError
 
 from .behavior_tree import BehaviorTree
 from .goat_state import GoatState
+from .models.text_to_speech import TextToSpeech
 
 
 class GoatController:
@@ -81,6 +82,7 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         on_message_callback: Optional[Callable] = None,
         on_plan_update_callback: Optional[Callable] = None,
         on_state_update_callback: Optional[Callable] = None,
+        use_tts: bool = False
     ):
 
         self.ollama_host = ollama_host
@@ -92,6 +94,10 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         self.behavior_tree = BehaviorTree()
         self.ollama_client = Client(host=ollama_host)
         self.state = GoatState()
+
+        # TTS setup
+        self.use_tts = use_tts
+        self.tts = TextToSpeech() if use_tts else None
 
     @property
     def conversations(self):
@@ -189,10 +195,12 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         plan_json = ""
         in_plan = False
         plan_updated = False
-
+        current_chunk = ""
+        
         for chunk in stream:
             content = chunk["message"]["content"]
             ai_response += content
+            current_chunk += content
 
             # Process plan tags and update behavior tree
             if "<plan>" in content:
@@ -205,19 +213,25 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
 
             if in_plan:
                 plan_json += content.replace("<plan>", "").replace("</plan>", "")
-            elif self.on_message_callback:
+
+            # Send the chunk through callback
+            if self.on_message_callback and current_chunk:
                 self.on_message_callback(
-                    conversation_id, {"text": content, "isUser": False}
+                    conversation_id, 
+                    {"text": current_chunk, "isUser": False}
                 )
+                current_chunk = ""
 
         # Add complete AI response to conversation
         conversation = next(c for c in self.conversations if c["id"] == conversation_id)
         ai_message_obj = {"text": ai_response, "isUser": False}
         conversation["messages"].append(ai_message_obj)
 
-        # If no plan was found, try to extract it from the response
-        if not plan_updated:
-            self._try_extract_plan(ai_response)
+        # Process TTS after complete response
+        if self.use_tts and self.tts and not in_plan:
+            # Remove any plan JSON from the response
+            clean_text = ai_response.split("<plan>")[0].strip()
+            self.tts.speak(clean_text)
 
         return {
             "success": True,

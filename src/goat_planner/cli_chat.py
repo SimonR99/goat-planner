@@ -1,16 +1,18 @@
 import json
 import sys
 from typing import Dict, Optional
+import argparse
 
 from goat_planner.goat_controller import GoatController
 
 
 class CliChat:
-    def __init__(self):
+    def __init__(self, use_tts: bool = False):
         self.controller = GoatController(
             on_message_callback=self.on_message,
             on_plan_update_callback=self.on_plan_update,
             on_state_update_callback=self.on_state_update,
+            use_tts=use_tts
         )
         self.current_conversation = None
         self.current_response = ""
@@ -92,7 +94,11 @@ class CliChat:
 
 
 def main():
-    chat = CliChat()
+    parser = argparse.ArgumentParser(description='GoatBrain CLI Chat')
+    parser.add_argument('--tts', action='store_true', help='Enable text-to-speech')
+    args = parser.parse_args()
+
+    chat = CliChat(use_tts=args.tts)
     chat.run()
 
 
