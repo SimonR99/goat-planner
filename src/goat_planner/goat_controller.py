@@ -153,14 +153,9 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
                 context = {}
             context["world_state"] = self.state.get_full_state()
 
-            # Update system message with context
-            system_message = self.SYSTEM_MESSAGE
-            system_message += f"\nWorld State: {json.dumps(context['world_state'])}\n"
-
-            current_state = f"Current state: {self.behavior_tree.to_json()}\n\n"
-
+            # Create messages list with system message first
             ollama_messages = [
-                {"role": "system", "content": system_message + current_state},
+                {"role": "system", "content": self.SYSTEM_MESSAGE},
                 *[
                     {
                         "role": "user" if msg["isUser"] else "assistant",
@@ -187,6 +182,7 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
     def _process_ollama_response(
         self, conversation_id: str, ollama_messages: List[Dict]
     ) -> Dict:
+
         stream = self.ollama_client.chat(
             model=self.model,
             messages=ollama_messages,

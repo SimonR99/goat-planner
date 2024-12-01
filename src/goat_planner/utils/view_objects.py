@@ -44,9 +44,23 @@ def view_objects():
     print("\nObjects in Database:")
     print(tabulate(table_data, headers=headers, tablefmt='grid'))
 
+def view_state():
+    # Get singleton instance of GoatState
+    state = GoatState()
+    
+    print("\n=== Objects in Database ===")
+    view_objects()
+    
+    print("\n=== Current Behavior Tree ===")
+    tree = state.get_behavior_tree()
+    if tree:
+        print(json.dumps(tree, indent=2))
+    else:
+        print("No behavior tree found")
+
 def main():
     try:
-        view_objects()
+        view_state()
     except Exception as e:
         print(f"Error viewing objects: {e}")
 
