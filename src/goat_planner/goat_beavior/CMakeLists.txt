@@ -94,6 +94,7 @@ install(PROGRAMS
   scripts/pick_service.py
   scripts/place_service.py
   scripts/navigate_service.py
+  scripts/shepherd_connector.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
