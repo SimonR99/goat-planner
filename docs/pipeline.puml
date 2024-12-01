@@ -1,0 +1,61 @@
+@startuml
+' Style definitions
+skinparam componentStyle uml2
+skinparam component {
+    BackgroundColor #2C5773
+    FontColor white
+    BorderColor Black
+}
+
+package "Input" {
+    [Camera Feed] as camera_feed
+    [Microphone Input] as microphone_input
+    [Position Data] as position_data
+}
+
+package "Outside World" as world {
+    [Gazebo Simulation] as gazebo
+    [Real-World Environment] as real_world
+}
+
+package "Goat Planner" {
+    component "Shepherd" as shepherd
+    [Goat Behavior (BT)] as goat_behavior
+    [Plan Server] as state_server
+    [Whisper (and pyannote)] as whisper
+    [Ollama (Custom Model)] as ollama
+    [Goat Controller] as goat_controller
+    [Flask Server] as flask_server
+}
+
+
+package "Output" {
+    [Robot Actions] as robot_actions
+    [TTS (Text-to-Speech)] as tts
+    component "React Client" as frontend_node
+}
+
+' Connections between components
+
+' Input
+world -d-> camera_feed
+world -d-> microphone_input
+world -d-> position_data
+camera_feed --> shepherd
+microphone_input --> whisper
+position_data --> shepherd
+
+' Processing
+shepherd --> goat_controller : object context
+goat_behavior <--> goat_controller : BT execution feedback
+state_server <--> goat_controller : stores and retrieves plans
+whisper --> ollama : send transcription
+ollama --> goat_controller : send task plan (JSON)
+goat_controller --> flask_server : send current plan and status
+flask_server <--> frontend_node : transmit plans and chat updates
+
+' Output
+goat_controller --> tts : verbal feedback
+goat_behavior <--> robot_actions : execute task and feedback
+
+@enduml
