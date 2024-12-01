@@ -3,6 +3,7 @@ import json
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import os
+from .config import CONVERSATIONS_PATH
 
 @dataclass
 class WorldObject:
@@ -40,14 +41,16 @@ class GoatState:
         )
 
     def _load_conversations(self) -> List[Dict]:
-        if os.path.exists('conversations.json'):
-            with open('conversations.json', 'r') as f:
+        if os.path.exists(CONVERSATIONS_PATH):
+            with open(CONVERSATIONS_PATH, 'r') as f:
                 return json.load(f)
         return []
 
     def _save_conversations(self):
-        with open('conversations.json', 'w') as f:
-            json.dump(self.state.conversations, f)
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(CONVERSATIONS_PATH), exist_ok=True)
+        with open(CONVERSATIONS_PATH, 'w') as f:
+            json.dump(self.state.conversations, f, indent=2)
 
     def add_conversation(self, conversation: Dict):
         self.state.conversations.append(conversation)
