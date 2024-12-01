@@ -14,8 +14,8 @@ Goat Planner bridges the gap between natural language commands and robot executi
 | Image | Description |
 |-------|-------------|
 | ![Goat Planner web ui](./images/user_interface.png) | The Goat Planner web interface provides an intuitive dashboard for controlling robot behavior. Users can interact with the robot through natural language commands, view the available objects and visualize the current behavior tree. |
-| ![Goat Planner spatial querying](./images/spatial_querying.png) ![Nature Image](./images/nature_image.png) | Spatial querying capabilities allow the robot to understand and reason about its environment. In this image, the robot is asked to show an picture of the nature, which is corresponding to no real label. |
-| ![Rove simulation](./images/simulation.png) | The simulator use is [Rove](https://github.com/clubcapra/rove) with [Shepherd](https://github.com/kapr-ai/shepherd) in the aws environment using Gazebo. |
+| ![Goat Planner spatial querying](./images/spatial_querying.png) ![Nature Image](./images/nature_image.png) | Spatial querying capabilities allow the robot to understand and reason about its environment with the help of [Shepherd](https://github.com/kapr-ai/shepherd). In this image, the robot is asked to show an picture of the nature, which is corresponding to no real label. |
+| ![Rove simulation](./images/simulation.png) | The simulator use is [Rove](https://github.com/clubcapra/rove) in the aws environment using Gazebo. |
 
 ## Features
 
