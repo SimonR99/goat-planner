@@ -9,6 +9,7 @@ from dataclasses import asdict
 
 from goat_planner.goat_state import GoatState
 from goat_planner.goat_controller import GoatController
+from goat_planner.utils.json_xml_convertor import json_to_xml
 
 class GoatStateBridge(Node):
     def __init__(self):
@@ -17,8 +18,10 @@ class GoatStateBridge(Node):
         # Initialize GoatState
         self.goat_state = GoatState()
         
-        # Initialize GoatController
-        self.controller = GoatController()
+        # Initialize GoatController with callback for plan updates
+        self.controller = GoatController(
+            on_plan_update_callback=self.on_plan_update
+        )
         
         # Create subscription to shepherd detections
         self.create_subscription(
@@ -28,17 +31,81 @@ class GoatStateBridge(Node):
             10
         )
         
-        # Create publisher for state updates
+        # Create publishers
         self.state_publisher = self.create_publisher(
             String,
             '/goat/world_state',
             10
         )
         
-        # Timer to periodically publish state
+        # Add behavior tree publisher
+        self.behavior_publisher = self.create_publisher(
+            String,
+            '/goat/behavior_tree',
+            10
+        )
+        
+        # Timer to periodically publish state and behavior tree
         self.create_timer(1.0, self.publish_state)
+        self.create_timer(0.1, self.publish_behavior_tree)  # Higher frequency for behavior tree
+        
+        # Store last published behavior tree to avoid unnecessary updates
+        self.last_published_tree = None
         
         self.get_logger().info('GoatStateBridge node initialized')
+
+    def on_plan_update(self, tree: Dict):
+        """Callback for when the behavior tree is updated"""
+        try:
+            self.publish_behavior_tree()
+        except Exception as e:
+            self.get_logger().error(f'Error in plan update callback: {str(e)}')
+
+    def _convert_values_to_str(self, data):
+        """Recursively convert all values in a dictionary to strings"""
+        if isinstance(data, dict):
+            return {k: self._convert_values_to_str(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self._convert_values_to_str(item) for item in data]
+        elif isinstance(data, (int, float, bool)):
+            return str(data)
+        return data
+
+    def publish_behavior_tree(self):
+        """Publish the current behavior tree in XML format"""
+        try:
+            # Get current behavior tree
+            tree = self.goat_state.get_behavior_tree()
+            
+            # Skip if tree is empty or unchanged
+            if not tree or tree == self.last_published_tree:
+                return
+                
+            # Convert all numeric values to strings
+            tree = self._convert_values_to_str(tree)
+            
+            # Convert tree to proper format for XML conversion
+            tree_wrapper = {
+                "root": {
+                    "BehaviorTree": tree
+                }
+            }
+            
+            # Convert to XML
+            xml_tree = json_to_xml(json.dumps(tree_wrapper))
+            
+            # Create and publish message
+            tree_msg = String()
+            tree_msg.data = xml_tree
+            self.behavior_publisher.publish(tree_msg)
+            
+            # Update last published tree
+            self.last_published_tree = tree
+            
+            self.get_logger().debug('Published behavior tree update')
+            
+        except Exception as e:
+            self.get_logger().error(f'Error publishing behavior tree: {str(e)}')
 
     def object_detection_callback(self, msg: String):
         """Handle new object detections from Shepherd"""
@@ -69,9 +136,6 @@ class GoatStateBridge(Node):
                 'class': detection.get('detection', {}).get('class'),
                 'timestamp': detection.get('timestamp')
             }
-            
-            # Debug log the properties
-            self.get_logger().debug(f"Object properties: {properties}")
             
             # Update the world object in GoatState
             self.controller.update_world_object(
