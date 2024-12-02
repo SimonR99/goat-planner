@@ -42,11 +42,18 @@ const ChatBox: React.FC = () => {
 
     socket.on("conversations", (data: ConversationHistory[]) => {
       setConversations(data);
-      if (data.length > 0 && !currentConversationId) {
+      if (data.length > 0 && currentConversationId === null) {
         setCurrentConversationId(data[0].id);
       }
     });
 
+    return () => {
+      socket.off("connect");
+      socket.off("conversations");
+    };
+  }, [currentConversationId]);
+
+  useEffect(() => {
     socket.on(
       "new_message",
       (data: { conversationId: string; message: Message }) => {
@@ -99,12 +106,16 @@ const ChatBox: React.FC = () => {
     });
 
     return () => {
-      socket.off("connect");
-      socket.off("conversations");
       socket.off("new_message");
       socket.off("ai_response_complete");
     };
-  }, [currentConversationId, currentAIResponse, isReceivingPlan, isTTSEnabled]);
+  }, [currentConversationId, currentAIResponse, isReceivingPlan]);
+
+  useEffect(() => {
+    if (socket.connected) {
+      socket.emit("get_conversations");
+    }
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
