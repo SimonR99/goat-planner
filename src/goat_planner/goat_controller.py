@@ -22,49 +22,95 @@ The behavior tree should use the following node types:
 - sequence: Executes children in order, stops if one fails
 - fallback: Tries children in order until one succeeds
 - retry: Retries its child node a specified number of times
-- action: A leaf node representing a specific action
 - loop: Continuously executes its child nodes
+- anything else: Represents a specific action
 
 Example of a correct plan output:
 <plan>
 {
   "type": "Sequence",
-  "name": "Root",
+  "name": "RetrieveFoodSequence",
   "nodes": [
     {
-      "type": "Fallback",
-      "name": "Open Door",
+      "type": "Retry",
+      "retries": "3",
       "nodes": [
         {
-          "type": "Action",
-          "name": "Check if Door is Open",
-          "check": "is_door_open"
-        },
-        {
-          "type": "Retry",
-          "name": "Open",
-          "attempts": "5",
-          "nodes": [
-            {
-              "type": "Action",
-              "name": "Attempt to Open",
-              "target": "Door"
-            }
-          ]
+          "type": "Locate",
+          "object": "apple",
+          "location": "kitchen",
+          "method": "camera_scan"
         }
       ]
     },
     {
-      "type": "Action",
-      "name": "Enter Room",
-      "action": "enter",
-      "target": "Room"
+      "type": "Fallback",
+      "name": "LocateFoodFallback",
+      "nodes": [
+        {
+          "type": "Locate",
+          "object": "apple",
+          "location": "kitchen",
+          "method": "camera_scan"
+        },
+        {
+          "type": "AskForHelp",
+          "message": "Unable to locate the apple. Please assist."
+        }
+      ]
     },
     {
-      "type": "Action",
-      "name": "Close Door",
-      "action": "close",
-      "target": "Door"
+      "type": "Retry",
+      "retries": "2",
+      "nodes": [
+        {
+          "type": "NavigateTo",
+          "location": "kitchen_table",
+          "mode": "safe",
+          "speed": "medium"
+        }
+      ]
+    },
+    {
+      "type": "Retry",
+      "retries": "2",
+      "nodes": [
+        {
+          "type": "Pick",
+          "object": "apple",
+          "grip_strength": "medium",
+          "precision": "high"
+        }
+      ]
+    },
+    {
+      "type": "Retry",
+      "retries": "2",
+      "nodes": [
+        {
+          "type": "NavigateTo",
+          "location": "dining_table",
+          "mode": "direct",
+          "speed": "fast"
+        }
+      ]
+    },
+    {
+      "type": "Fallback",
+      "name": "PlaceFoodFallback",
+      "nodes": [
+        {
+          "type": "Place",
+          "object": "apple",
+          "surface": "dining_table",
+          "orientation": "upright",
+          "alignment": "center"
+        },
+        {
+          "type": "AskForHelp",
+          "message": "Unable to place the apple. Please assist."
+        }
+      ]
     }
   ]
 }

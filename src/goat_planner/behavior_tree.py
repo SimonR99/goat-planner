@@ -28,7 +28,11 @@ class BehaviorTree:
             return False
             
         # Check required fields for all nodes
-        if not all(key in node for key in ["type", "name"]):
+        if not all(key in node for key in ["type"]):
+            return False
+            
+        # Validate specific node types
+        if node["type"] == "Retry" and "retries" not in node:
             return False
             
         # If node has child nodes, validate them
@@ -37,6 +41,24 @@ class BehaviorTree:
                 return False
             return all(self.validate_node(child) for child in node["nodes"])
                 
+        # Validate action nodes have required parameters
+        if node["type"] in ["Locate", "NavigateTo", "Pick", "Place", "AskForHelp"]:
+            return self.validate_action_node(node)
+                
+        return True
+
+    def validate_action_node(self, node):
+        """Validate parameters for specific action types"""
+        required_params = {
+            "Locate": ["object", "location", "method"],
+            "NavigateTo": ["location", "mode", "speed"],
+            "Pick": ["object", "grip_strength", "precision"],
+            "Place": ["object", "surface", "orientation", "alignment"],
+            "AskForHelp": ["message"]
+        }
+        
+        if node["type"] in required_params:
+            return all(param in node for param in required_params[node["type"]])
         return True
 
     def update_tree(self, new_tree):

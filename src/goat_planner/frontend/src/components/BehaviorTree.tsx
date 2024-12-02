@@ -21,27 +21,25 @@ import {
 
 const socket = io("http://localhost:5000");
 
-// Update the TreeNode interface to match new structure
+// Update the TreeNode interface
 interface TreeNode {
   type: string;
-  name: string;
+  name?: string;
   nodes?: TreeNode[];
-  parameters?: {
-    [key: string]: any;
-  };
-  check?: string;
-  action?: string;
-  target?: string;
-  attempts?: string;
-}
-
-// Update the root interface
-interface BehaviorTreeData {
-  root: {
-    type: "BehaviorTree";
-    id: string;
-    nodes: TreeNode[];
-  };
+  // Retry specific
+  retries?: string;
+  // Action-specific parameters
+  object?: string;
+  location?: string;
+  method?: string;
+  mode?: string;
+  speed?: string;
+  grip_strength?: string;
+  precision?: string;
+  surface?: string;
+  orientation?: string;
+  alignment?: string;
+  message?: string;
 }
 
 // Add this type definition
@@ -110,7 +108,7 @@ const BehaviorTree: React.FC = () => {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [treeData, setTreeData] = useState<BehaviorTreeData | null>(null);
+  const [treeData, setTreeData] = useState<TreeNode | null>(null);
   const [jsonText, setJsonText] = useState("");
   const [viewMode, setViewMode] = useState<"json" | "graph">("graph");
 
@@ -130,6 +128,28 @@ const BehaviorTree: React.FC = () => {
       const nodeWidth = node.nodes?.length || 1;
       const xPosition = offsetX + (nodeWidth * totalWidth) / 2;
 
+      // Get parameters based on node type
+      const getParameters = (node: TreeNode) => {
+        const params: { [key: string]: any } = {};
+        
+        if (node.retries) params.retries = node.retries;
+        
+        // Add action-specific parameters
+        const actionParams = [
+          'object', 'location', 'method', 'mode', 'speed',
+          'grip_strength', 'precision', 'surface', 'orientation',
+          'alignment', 'message'
+        ];
+        
+        actionParams.forEach(param => {
+          if (param in node) {
+            params[param] = node[param as keyof TreeNode];
+          }
+        });
+        
+        return params;
+      };
+
       // Create node
       nodes.push({
         id: currentId,
@@ -139,14 +159,9 @@ const BehaviorTree: React.FC = () => {
           y: level * 150,
         },
         data: {
-          label: node.name,
+          label: node.name || node.type,
           type: node.type.toLowerCase(),
-          parameters: {
-            ...(node.check && { check: node.check }),
-            ...(node.action && { action: node.action }),
-            ...(node.target && { target: node.target }),
-            ...(node.attempts && { attempts: node.attempts }),
-          },
+          parameters: getParameters(node),
         },
       });
 
@@ -240,7 +255,7 @@ const BehaviorTree: React.FC = () => {
     if (!tree || typeof tree !== "object") return false;
 
     // Check required fields
-    if (!tree.type || !tree.name || !Array.isArray(tree.nodes)) {
+    if (!tree.type || !Array.isArray(tree.nodes)) {
       return false;
     }
 
@@ -251,8 +266,13 @@ const BehaviorTree: React.FC = () => {
   const validateNode = (node: any): boolean => {
     if (!node || typeof node !== "object") return false;
 
-    // Check required fields for all nodes
-    if (!node.type || !node.name) {
+    // Check required field type
+    if (!node.type) {
+      return false;
+    }
+
+    // Validate Retry nodes have retries field
+    if (node.type === "Retry" && !node.retries) {
       return false;
     }
 
@@ -262,7 +282,21 @@ const BehaviorTree: React.FC = () => {
       return node.nodes.every(validateNode);
     }
 
-    return true;
+    // Validate action nodes based on their type
+    switch (node.type) {
+      case "Locate":
+        return node.object && node.location && node.method;
+      case "NavigateTo":
+        return node.location && node.mode && node.speed;
+      case "Pick":
+        return node.object && node.grip_strength && node.precision;
+      case "Place":
+        return node.object && node.surface && node.orientation && node.alignment;
+      case "AskForHelp":
+        return node.message !== undefined;
+      default:
+        return true;
+    }
   };
 
   const handleJsonEdit = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -284,10 +318,32 @@ const BehaviorTree: React.FC = () => {
   };
 
   const transformTreeData = (node: TreeNode): any => {
+    // Get parameters based on node type
+    const getParameters = (node: TreeNode) => {
+      const params: { [key: string]: any } = {};
+      
+      if (node.retries) params.retries = node.retries;
+      
+      // Add action-specific parameters
+      const actionParams = [
+        'object', 'location', 'method', 'mode', 'speed',
+        'grip_strength', 'precision', 'surface', 'orientation',
+        'alignment', 'message'
+      ];
+      
+      actionParams.forEach(param => {
+        if (param in node) {
+          params[param] = node[param as keyof TreeNode];
+        }
+      });
+      
+      return params;
+    };
+
     const transformedNode: any = {
       name: node.name,
       type: node.type,
-      parameters: node.parameters
+      parameters: getParameters(node)
     };
 
     if (node.nodes && node.nodes.length > 0) {
