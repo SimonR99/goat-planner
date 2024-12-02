@@ -28,43 +28,37 @@ The behavior tree should use the following node types:
 Example of a correct plan output:
 <plan>
 {
-  "name": "Root",
-  "type": "sequence",
-  "children": [
-    {
-      "name": "Open Door",
-      "type": "fallback",
-      "children": [
-        {
-          "name": "Check if Door is Open",
-          "type": "action",
-          "children": []
-        },
-        {
-          "name": "Open Door",
-          "type": "retry",
-          "children": [
-            {
-              "name": "Attempt to Open Door",
-              "type": "action",
-              "children": []
+  "root": {
+    "type": "BehaviorTree",
+    "id": "MainTree",
+    "nodes": [
+      {
+        "type": "Sequence",
+        "name": "root_sequence",
+        "nodes": [
+          {
+            "type": "Action",
+            "name": "SaySomething",
+            "parameters": {
+              "message": "Hello"
             }
-          ],
-          "attempts": 5
-        }
-      ]
-    },
-    {
-      "name": "Enter Room",
-      "type": "action",
-      "children": []
-    },
-    {
-      "name": "Close Door",
-      "type": "action",
-      "children": []
-    }
-  ]
+          },
+          {
+            "type": "Action",
+            "name": "OpenGripper"
+          },
+          {
+            "type": "Action",
+            "name": "ApproachObject"
+          },
+          {
+            "type": "Action",
+            "name": "CloseGripper"
+          }
+        ]
+      }
+    ]
+  }
 }
 </plan>
 
@@ -264,7 +258,7 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
             if self.behavior_tree.update_tree(plan_data):
                 # Store the plan in the database through GoatState
                 self.state.update_behavior_tree(plan_data)
-                
+
                 # Notify listeners about the plan update
                 if self.on_plan_update_callback:
                     self.on_plan_update_callback(self.behavior_tree.get_tree())
