@@ -24,12 +24,15 @@ const socket = io("http://localhost:5000");
 // Update the TreeNode interface to match new structure
 interface TreeNode {
   type: string;
-  id?: string;
   name: string;
   nodes?: TreeNode[];
   parameters?: {
     [key: string]: any;
   };
+  check?: string;
+  action?: string;
+  target?: string;
+  attempts?: string;
 }
 
 // Update the root interface
@@ -111,7 +114,7 @@ const BehaviorTree: React.FC = () => {
   const [jsonText, setJsonText] = useState("");
   const [viewMode, setViewMode] = useState<"json" | "graph">("graph");
 
-  const transformTreeToFlow = (treeData: BehaviorTreeData) => {
+  const transformTreeToFlow = (treeData: TreeNode) => {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
     let nodeId = 0;
@@ -138,7 +141,12 @@ const BehaviorTree: React.FC = () => {
         data: {
           label: node.name,
           type: node.type.toLowerCase(),
-          parameters: node.parameters || {},
+          parameters: {
+            ...(node.check && { check: node.check }),
+            ...(node.action && { action: node.action }),
+            ...(node.target && { target: node.target }),
+            ...(node.attempts && { attempts: node.attempts }),
+          },
         },
       });
 
@@ -170,11 +178,8 @@ const BehaviorTree: React.FC = () => {
       return { id: currentId, width: nodeWidth };
     };
 
-    // Start processing from root nodes
-    const totalWidth = 250; // Horizontal spacing between nodes
-    treeData.root.nodes.forEach((rootNode, index) => {
-      processNode(rootNode, null, 0, index * totalWidth, totalWidth);
-    });
+    // Start processing from root
+    processNode(treeData, null, 0, 0, 250);
 
     return { nodes, edges };
   };
@@ -234,22 +239,13 @@ const BehaviorTree: React.FC = () => {
   const validateTree = (tree: any): boolean => {
     if (!tree || typeof tree !== "object") return false;
 
-    // Check root structure
-    if (!tree.root) return false;
-    
-    const root = tree.root;
-    // Validate required fields in root
-    if (!root.type || !root.id || !Array.isArray(root.nodes)) {
-      return false;
-    }
-    
-    // Validate root type
-    if (root.type !== "BehaviorTree") {
+    // Check required fields
+    if (!tree.type || !tree.name || !Array.isArray(tree.nodes)) {
       return false;
     }
 
     // Validate all nodes in the tree
-    return root.nodes.every(validateNode);
+    return tree.nodes.every(validateNode);
   };
 
   const validateNode = (node: any): boolean => {
@@ -264,11 +260,6 @@ const BehaviorTree: React.FC = () => {
     if (node.nodes) {
       if (!Array.isArray(node.nodes)) return false;
       return node.nodes.every(validateNode);
-    }
-
-    // If node has parameters, validate them
-    if (node.parameters && typeof node.parameters !== "object") {
-      return false;
     }
 
     return true;

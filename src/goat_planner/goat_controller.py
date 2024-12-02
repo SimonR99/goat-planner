@@ -28,37 +28,45 @@ The behavior tree should use the following node types:
 Example of a correct plan output:
 <plan>
 {
-  "root": {
-    "type": "BehaviorTree",
-    "id": "MainTree",
-    "nodes": [
-      {
-        "type": "Sequence",
-        "name": "root_sequence",
-        "nodes": [
-          {
-            "type": "Action",
-            "name": "SaySomething",
-            "parameters": {
-              "message": "Hello"
+  "type": "Sequence",
+  "name": "Root",
+  "nodes": [
+    {
+      "type": "Fallback",
+      "name": "Open Door",
+      "nodes": [
+        {
+          "type": "Action",
+          "name": "Check if Door is Open",
+          "check": "is_door_open"
+        },
+        {
+          "type": "Retry",
+          "name": "Open",
+          "attempts": "5",
+          "nodes": [
+            {
+              "type": "Action",
+              "name": "Attempt to Open",
+              "target": "Door"
             }
-          },
-          {
-            "type": "Action",
-            "name": "OpenGripper"
-          },
-          {
-            "type": "Action",
-            "name": "ApproachObject"
-          },
-          {
-            "type": "Action",
-            "name": "CloseGripper"
-          }
-        ]
-      }
-    ]
-  }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Action",
+      "name": "Enter Room",
+      "action": "enter",
+      "target": "Room"
+    },
+    {
+      "type": "Action",
+      "name": "Close Door",
+      "action": "close",
+      "target": "Door"
+    }
+  ]
 }
 </plan>
 

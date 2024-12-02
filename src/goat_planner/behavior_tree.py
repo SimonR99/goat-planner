@@ -3,36 +3,25 @@ import json
 class BehaviorTree:
     def __init__(self):
         self.tree = {
-            "root": {
-                "type": "BehaviorTree",
-                "id": "MainTree",
-                "nodes": []
-            }
+            "type": "Sequence",
+            "name": "Root",
+            "nodes": []
         }
 
     def validate_tree(self, tree):
         if not isinstance(tree, dict):
             return False
             
-        # Check root structure
-        if "root" not in tree:
-            return False
-            
-        root = tree["root"]
-        # Validate required fields in root
-        if not all(key in root for key in ["type", "id", "nodes"]):
-            return False
-            
-        # Validate root type
-        if root["type"] != "BehaviorTree":
+        # Check required fields
+        if not all(key in tree for key in ["type", "name", "nodes"]):
             return False
             
         # Validate nodes array
-        if not isinstance(root["nodes"], list):
+        if not isinstance(tree["nodes"], list):
             return False
             
         # Validate each node in the tree
-        return all(self.validate_node(node) for node in root["nodes"])
+        return all(self.validate_node(node) for node in tree["nodes"])
 
     def validate_node(self, node):
         if not isinstance(node, dict):
@@ -47,11 +36,6 @@ class BehaviorTree:
             if not isinstance(node["nodes"], list):
                 return False
             return all(self.validate_node(child) for child in node["nodes"])
-            
-        # If node has parameters, validate them
-        if "parameters" in node:
-            if not isinstance(node["parameters"], dict):
-                return False
                 
         return True
 
