@@ -41,6 +41,7 @@ const ChatBox: React.FC = () => {
     });
 
     socket.on("conversations", (data: ConversationHistory[]) => {
+      console.log("Received conversations:", data);
       setConversations(data);
       if (data.length > 0 && currentConversationId === null) {
         setCurrentConversationId(data[0].id);
@@ -57,37 +58,31 @@ const ChatBox: React.FC = () => {
     socket.on(
       "new_message",
       (data: { conversationId: string; message: Message }) => {
+        console.log("Received new message:", data);
         if (data.conversationId === currentConversationId) {
           if (data.message.isUser) {
+            // For user messages, add them directly to the conversation
             setConversations((prevConversations) =>
               prevConversations.map((conv) =>
                 conv.id === data.conversationId
-                  ? { ...conv, messages: [...conv.messages, data.message] }
+                  ? {
+                      ...conv,
+                      messages: [...conv.messages, data.message],
+                    }
                   : conv
               )
             );
-            setCurrentAIResponse("");
-            setIsReceivingPlan(false);
           } else {
-            let newContent = data.message.text;
-            if (newContent.includes("<plan>")) {
-              setIsReceivingPlan(true);
-              newContent = newContent.split("<plan>")[0];
-            }
-            if (newContent.includes("</plan>")) {
-              setIsReceivingPlan(false);
-              newContent = newContent.split("</plan>")[1] || "";
-            }
-            if (!isReceivingPlan && newContent) {
-              setCurrentAIResponse((prev) => prev + newContent);
-            }
+            // For AI messages, update the currentAIResponse
+            setCurrentAIResponse((prev) => prev + data.message.text);
           }
         }
       }
     );
 
     socket.on("ai_response_complete", ({ conversationId }) => {
-      if (conversationId === currentConversationId) {
+      console.log("AI response complete for:", conversationId);
+      if (conversationId === currentConversationId && currentAIResponse) {
         setConversations((prevConversations) =>
           prevConversations.map((conv) =>
             conv.id === conversationId
@@ -109,7 +104,7 @@ const ChatBox: React.FC = () => {
       socket.off("new_message");
       socket.off("ai_response_complete");
     };
-  }, [currentConversationId, currentAIResponse, isReceivingPlan]);
+  }, [currentConversationId, currentAIResponse]);
 
   useEffect(() => {
     if (socket.connected) {
@@ -164,6 +159,8 @@ const ChatBox: React.FC = () => {
       return message.text;
     }
 
+    console.log(message);
+
     const codeBlockRegex = /```(\w+)?\s*([\s\S]*?)```/g;
     const planRegex = /<plan>[\s\S]*?<\/plan>/g;
     const parts = [];
@@ -210,6 +207,38 @@ const ChatBox: React.FC = () => {
   const handleTTSToggle = (enabled: boolean) => {
     setIsTTSEnabled(enabled);
     socket.emit("toggle_tts", { enabled });
+  };
+
+  const renderMessages = () => {
+    const messages = currentConversation?.messages || [];
+    return (
+      <>
+        {messages.map((message, index) => (
+          <div
+            key={message.id || index}
+            className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
+          >
+            <div
+              className={`max-w-3/4 p-3 rounded-lg ${
+                message.isUser
+                  ? "bg-red-600 text-white"
+                  : "bg-gray-200 text-gray-800"
+              } break-words whitespace-pre-wrap overflow-x-auto`}
+            >
+              {renderMessage(message)}
+            </div>
+          </div>
+        ))}
+        {/* Render streaming response in a separate bubble */}
+        {currentAIResponse && (
+          <div className="flex justify-start">
+            <div className="max-w-3/4 p-3 rounded-lg bg-gray-200 text-gray-800 break-words whitespace-pre-wrap overflow-x-auto">
+              {renderMessage({ text: currentAIResponse, isUser: false })}
+            </div>
+          </div>
+        )}
+      </>
+    );
   };
 
   return (
@@ -296,31 +325,7 @@ const ChatBox: React.FC = () => {
         </div>
         <div className="w-3/4 flex flex-col">
           <div className="flex-grow overflow-y-auto p-4 space-y-4">
-            {currentConversation?.messages.map((message, index) => (
-              <div
-                key={message.id || index}
-                className={`flex ${
-                  message.isUser ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-3/4 p-3 rounded-lg ${
-                    message.isUser
-                      ? "bg-red-600 text-white"
-                      : "bg-gray-200 text-gray-800"
-                  } break-words whitespace-pre-wrap overflow-x-auto`}
-                >
-                  {renderMessage(message)}
-                </div>
-              </div>
-            ))}
-            {currentAIResponse && (
-              <div className="flex justify-start">
-                <div className="max-w-3/4 p-3 rounded-lg bg-gray-200 text-gray-800 break-words whitespace-pre-wrap overflow-x-auto">
-                  {renderMessage({ text: currentAIResponse, isUser: false })}
-                </div>
-              </div>
-            )}
+            {renderMessages()}
             <div ref={messagesEndRef} />
           </div>
           <form

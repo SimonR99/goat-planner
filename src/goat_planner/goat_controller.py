@@ -194,6 +194,9 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         # Add user message to conversation
         user_message = {"text": message, "isUser": True}
         conversation["messages"].append(user_message)
+        
+        # Update the conversation in the database immediately after adding user message
+        self.state.update_conversation(conversation_id, {"messages": conversation["messages"]})
 
         if self.on_message_callback:
             self.on_message_callback(conversation_id, user_message)
@@ -275,6 +278,7 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         conversation = next(c for c in self.conversations if c["id"] == conversation_id)
         ai_message_obj = {"text": ai_response, "isUser": False}
         conversation["messages"].append(ai_message_obj)
+        self.state.update_conversation(conversation_id, {"messages": conversation["messages"]})
 
         # Process TTS after complete response
         if self.use_tts and self.tts and not in_plan:

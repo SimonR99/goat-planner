@@ -223,8 +223,25 @@ class GoatState:
 
     def add_conversation(self, conversation):
         """Add a new conversation"""
-        self.conversations.append(conversation)
-        self._save_conversations()
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO conversations 
+                    (id, name, messages, last_updated)
+                    VALUES (?, ?, ?, ?)
+                ''', (
+                    conversation['id'],
+                    conversation['name'],
+                    json.dumps(conversation.get('messages', [])),
+                    datetime.now().isoformat()
+                ))
+                conn.commit()
+                
+                # Update in-memory state after successful database insert
+                self.conversations.append(conversation)
+        except Exception as e:
+            print(f"Error adding conversation to database: {e}")
 
     def update_conversation(self, conversation_id: str, updates: Dict):
         """Update an existing conversation"""
@@ -255,6 +272,10 @@ class GoatState:
                     if conv['id'] == conversation_id:
                         conv.update(updates)
                         break
+                    
+                # Reload conversations to ensure consistency
+                self._load_conversations()
+                
         except Exception as e:
             print(f"Error updating conversation in database: {e}")
 
