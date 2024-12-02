@@ -8,6 +8,7 @@ from ollama import Client, ResponseError
 from .behavior_tree import BehaviorTree
 from .goat_state import GoatState
 from .models.text_to_speech import TextToSpeech
+from .utils.json_xml_convertor import json_to_xml
 
 
 class GoatController:
@@ -311,7 +312,12 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
             # Update both the behavior tree and state
             if self.behavior_tree.update_tree(plan_data):
                 # Store the plan in the database through GoatState
+
                 self.state.update_behavior_tree(plan_data)
+
+                # Save into xml file
+                with open("main_tree.xml", "w", encoding="utf-8") as f:
+                    f.write(json_to_xml(plan_data))
 
                 # Notify listeners about the plan update
                 if self.on_plan_update_callback:
