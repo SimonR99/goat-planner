@@ -1,6 +1,5 @@
 import json
 import xml.etree.ElementTree as ET
-from html import unescape
 from xml.dom.minidom import parseString
 
 
@@ -17,7 +16,17 @@ def xml_to_json(xml_string):
         return node
 
     root = ET.fromstring(xml_string)
-    return {root.tag: parse_element(root)}
+    main_tree_to_execute = root.attrib.get("main_tree_to_execute", "MainTree")
+    main_tree = None
+
+    # Find the BehaviorTree node that matches the main_tree_to_execute
+    for child in root:
+        if child.attrib.get("ID") == main_tree_to_execute:
+            main_tree = parse_element(child)
+            break
+
+    # Return only the core nodes (remove BehaviorTree wrapper)
+    return main_tree["nodes"][0]  # The core behavior tree
 
 
 def json_to_xml(json_obj):
@@ -28,12 +37,18 @@ def json_to_xml(json_obj):
                 for child in value:
                     element.append(build_element(child))
             elif key != "type":
-                element.set(key, value)
+                element.set(key, str(value))
         return element
 
-    root_key = next(iter(json_obj))
-    root_data = json_obj[root_key]
-    root_element = build_element(root_data)
+    # Wrap the core JSON in a BehaviorTree and root
+    behavior_tree = {
+        "type": "BehaviorTree",
+        "ID": "MainTree",
+        "nodes": [json_obj],  # Wrap the core tree as nodes
+    }
+    root_element = ET.Element("root", {"main_tree_to_execute": "MainTree"})
+    behavior_tree_element = build_element(behavior_tree)
+    root_element.append(behavior_tree_element)
 
     # Pretty-print the XML
     rough_string = ET.tostring(root_element, "utf-8")

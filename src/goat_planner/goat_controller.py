@@ -194,9 +194,11 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         # Add user message to conversation
         user_message = {"text": message, "isUser": True}
         conversation["messages"].append(user_message)
-        
+
         # Update the conversation in the database immediately after adding user message
-        self.state.update_conversation(conversation_id, {"messages": conversation["messages"]})
+        self.state.update_conversation(
+            conversation_id, {"messages": conversation["messages"]}
+        )
 
         if self.on_message_callback:
             self.on_message_callback(conversation_id, user_message)
@@ -278,7 +280,9 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         conversation = next(c for c in self.conversations if c["id"] == conversation_id)
         ai_message_obj = {"text": ai_response, "isUser": False}
         conversation["messages"].append(ai_message_obj)
-        self.state.update_conversation(conversation_id, {"messages": conversation["messages"]})
+        self.state.update_conversation(
+            conversation_id, {"messages": conversation["messages"]}
+        )
 
         # Process TTS after complete response
         if self.use_tts and self.tts and not in_plan:
@@ -320,7 +324,11 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
                 self.state.update_behavior_tree(plan_data)
 
                 # Save into xml file
-                with open("main_tree.xml", "w", encoding="utf-8") as f:
+                with open(
+                    "src/goat_planner/goat_beavior/behavior_trees/main_tree.xml",
+                    "w",
+                    encoding="utf-8",
+                ) as f:
                     f.write(json_to_xml(plan_data))
 
                 # Notify listeners about the plan update
