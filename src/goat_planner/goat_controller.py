@@ -26,7 +26,8 @@ The behavior tree should use the following node types:
 - loop: Continuously executes its child nodes
 - anything else: Represents a specific action
 
-Example of a correct plan output:
+
+Example of a correct plan output :
 <plan>
 {
   "type": "Sequence",
@@ -67,8 +68,6 @@ Example of a correct plan output:
         {
           "type": "NavigateTo",
           "location": "kitchen_table",
-          "mode": "safe",
-          "speed": "medium"
         }
       ]
     },
@@ -91,8 +90,6 @@ Example of a correct plan output:
         {
           "type": "NavigateTo",
           "location": "dining_table",
-          "mode": "direct",
-          "speed": "fast"
         }
       ]
     },
@@ -112,6 +109,33 @@ Example of a correct plan output:
           "message": "Unable to place the apple. Please assist."
         }
       ]
+    }
+  ]
+}
+</plan>
+
+Available actions:
+- Navigate (x coordinate, y coordinate)
+- Wait (duration)
+
+Example of a correct plan output :
+<plan>
+{
+  "type": "Sequence",
+  "name": "MainSequence",
+  "nodes": [
+    {
+      "type": "Wait",
+      "duration": "2.0"
+    },
+    {
+      "type": "Navigate",
+      "x": "2.0",
+      "y": "0.0"
+    },
+    {
+      "type": "Wait",
+      "duration": "2.0"
     }
   ]
 }

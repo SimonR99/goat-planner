@@ -74,11 +74,15 @@ const getNodeIcon = (type: NodeType) => {
 // Custom node types
 const CustomNode: React.FC<NodeProps> = ({ data }) => {
   return (
-    <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-gray-200" 
-         style={{ width: '200px', maxWidth: '200px' }}>
+    <div
+      className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-gray-200"
+      style={{ width: "200px", maxWidth: "200px" }}
+    >
       <Handle type="target" position={Position.Top} className="w-2 h-2" />
       <div className="flex items-center gap-2">
-        <div className="text-xl flex-shrink-0">{getNodeIcon(data.type as NodeType)}</div>
+        <div className="text-xl flex-shrink-0">
+          {getNodeIcon(data.type as NodeType)}
+        </div>
         <div className="text-sm font-bold break-words overflow-hidden">
           {data.label}
         </div>
@@ -131,22 +135,30 @@ const BehaviorTree: React.FC = () => {
       // Get parameters based on node type
       const getParameters = (node: TreeNode) => {
         const params: { [key: string]: any } = {};
-        
+
         if (node.retries) params.retries = node.retries;
-        
+
         // Add action-specific parameters
         const actionParams = [
-          'object', 'location', 'method', 'mode', 'speed',
-          'grip_strength', 'precision', 'surface', 'orientation',
-          'alignment', 'message'
+          "object",
+          "location",
+          "method",
+          "mode",
+          "speed",
+          "grip_strength",
+          "precision",
+          "surface",
+          "orientation",
+          "alignment",
+          "message",
         ];
-        
-        actionParams.forEach(param => {
+
+        actionParams.forEach((param) => {
           if (param in node) {
             params[param] = node[param as keyof TreeNode];
           }
         });
-        
+
         return params;
       };
 
@@ -212,7 +224,7 @@ const BehaviorTree: React.FC = () => {
       console.log("Fetched behavior tree data:", data);
       setTreeData(data);
       setJsonText(JSON.stringify(data, null, 2));
-      
+
       // Transform the data for graph view
       if (data) {
         const flowData = transformTreeToFlow(data);
@@ -259,6 +271,14 @@ const BehaviorTree: React.FC = () => {
       return false;
     }
 
+    // Convert type to lowercase for comparison
+    const treeType = tree.type.toLowerCase();
+
+    // Root should be a control node
+    if (!["sequence", "fallback", "retry"].includes(treeType)) {
+      return false;
+    }
+
     // Validate all nodes in the tree
     return tree.nodes.every(validateNode);
   };
@@ -271,32 +291,25 @@ const BehaviorTree: React.FC = () => {
       return false;
     }
 
-    // Validate Retry nodes have retries field
-    if (node.type === "Retry" && !node.retries) {
-      return false;
-    }
+    // Convert type to lowercase for comparison
+    const nodeType = node.type.toLowerCase();
 
-    // If node has child nodes, validate them
-    if (node.nodes) {
-      if (!Array.isArray(node.nodes)) return false;
+    // Check if it's a control node
+    if (["sequence", "fallback", "retry"].includes(nodeType)) {
+      // Validate Retry nodes have retries field
+      if (nodeType === "retry" && !node.retries) {
+        return false;
+      }
+
+      // Control nodes should have child nodes
+      if (!node.nodes || !Array.isArray(node.nodes)) {
+        return false;
+      }
+
       return node.nodes.every(validateNode);
     }
 
-    // Validate action nodes based on their type
-    switch (node.type) {
-      case "Locate":
-        return node.object && node.location && node.method;
-      case "NavigateTo":
-        return node.location && node.mode && node.speed;
-      case "Pick":
-        return node.object && node.grip_strength && node.precision;
-      case "Place":
-        return node.object && node.surface && node.orientation && node.alignment;
-      case "AskForHelp":
-        return node.message !== undefined;
-      default:
-        return true;
-    }
+    return true;
   };
 
   const handleJsonEdit = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -321,33 +334,43 @@ const BehaviorTree: React.FC = () => {
     // Get parameters based on node type
     const getParameters = (node: TreeNode) => {
       const params: { [key: string]: any } = {};
-      
+
       if (node.retries) params.retries = node.retries;
-      
+
       // Add action-specific parameters
       const actionParams = [
-        'object', 'location', 'method', 'mode', 'speed',
-        'grip_strength', 'precision', 'surface', 'orientation',
-        'alignment', 'message'
+        "object",
+        "location",
+        "method",
+        "mode",
+        "speed",
+        "grip_strength",
+        "precision",
+        "surface",
+        "orientation",
+        "alignment",
+        "message",
       ];
-      
-      actionParams.forEach(param => {
+
+      actionParams.forEach((param) => {
         if (param in node) {
           params[param] = node[param as keyof TreeNode];
         }
       });
-      
+
       return params;
     };
 
     const transformedNode: any = {
       name: node.name,
       type: node.type,
-      parameters: getParameters(node)
+      parameters: getParameters(node),
     };
 
     if (node.nodes && node.nodes.length > 0) {
-      transformedNode.children = node.nodes.map(child => transformTreeData(child));
+      transformedNode.children = node.nodes.map((child) =>
+        transformTreeData(child)
+      );
     }
 
     return transformedNode;
@@ -390,12 +413,12 @@ const BehaviorTree: React.FC = () => {
             value={jsonText}
             onChange={handleJsonEdit}
             className="w-full h-full p-4 font-mono"
-            style={{ 
+            style={{
               minHeight: "400px",
               resize: "none",
               whiteSpace: "pre",
               overflowWrap: "normal",
-              overflowX: "auto"
+              overflowX: "auto",
             }}
           />
         ) : (
