@@ -157,7 +157,6 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         on_state_update_callback: Optional[Callable] = None,
         use_tts: bool = False,
     ):
-
         self.ollama_host = ollama_host
         self.model = model
         self.on_message_callback = on_message_callback
@@ -262,7 +261,6 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
     def _process_ollama_response(
         self, conversation_id: str, ollama_messages: List[Dict]
     ) -> Dict:
-
         stream = self.ollama_client.chat(
             model=self.model,
             messages=ollama_messages,

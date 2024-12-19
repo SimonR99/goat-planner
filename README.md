@@ -1,5 +1,8 @@
 # Goat Planner: Robot Control with Multimodal Perception
 
+🚧 **Under Construction** 🚧  
+This project is currently a work in progress. Features, documentation, and functionality may change frequently as development continues.
+
 Goat Planner is a system for planning and executing high-level tasks with a robot. It is mainly design to be used with rove, the CAPRA's student club robot. The system uses a fine-tuned version of LLaMA3 to generate behavior trees for robot task planning and execution and multiple AI pipelines to perform perception, mapping, and voice processing. This work builds on top of multiple recent advances in LLM-based robotics research (e.g. [1,2,3]) and multimodal perception (e.g. [4]).
 
 Demonstration: [GoatBrain Video](https://www.youtube.com/watch?v=d-8-XF0w_FI&ab_channel=SimonRoy)

@@ -10,7 +10,7 @@ def download_and_extract_coco(dataset_path="coco_dataset"):
     """
     # Ensure dataset directory exists
     os.makedirs(dataset_path, exist_ok=True)
-    
+
     # Define URLs for images and annotations
     coco_urls = {
         "val_images": "http://images.cocodataset.org/zips/val2017.zip",
@@ -20,16 +20,16 @@ def download_and_extract_coco(dataset_path="coco_dataset"):
         # Define the output zip file path
         zip_path = os.path.join(dataset_path, f"{key}.zip")
         extracted_path = os.path.join(dataset_path, key)
-        
+
         # Skip if already downloaded
         if os.path.exists(extracted_path):
             print(f"{key} already downloaded and extracted.")
             continue
-        
+
         # Download the file with progress bar
         print(f"Downloading {key}...")
         response = requests.get(url, stream=True)
-        total_size = int(response.headers.get('content-length', 0))
+        total_size = int(response.headers.get("content-length", 0))
         with open(zip_path, "wb") as f, tqdm(
             desc=key, total=total_size, unit="B", unit_scale=True
         ) as bar:
@@ -39,7 +39,7 @@ def download_and_extract_coco(dataset_path="coco_dataset"):
 
         # Extract the zip file
         print(f"Extracting {key}...")
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(dataset_path)
         os.remove(zip_path)  # Remove the zip file to save space
 
@@ -50,10 +50,10 @@ def download_and_extract_coco(dataset_path="coco_dataset"):
 if __name__ == "__main__":
     # Path to save the COCO dataset
     coco_dataset_path = "../data/coco_dataset"
-    
+
     # Download and prepare COCO dataset
     download_and_extract_coco(coco_dataset_path)
-    
+
     # Specify dataset folders for processing
     train_images_path = os.path.join(coco_dataset_path, "train_images")
     val_images_path = os.path.join(coco_dataset_path, "val_images")

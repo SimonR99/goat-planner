@@ -15,7 +15,12 @@ def load_yolo_model(model_path: str, device: str = "cpu"):
     return model
 
 
-def detect_objects(model, image: np.ndarray, confidence_threshold: float = 0.25, nms_threshold: float = 0.45) -> List[Dict]:
+def detect_objects(
+    model,
+    image: np.ndarray,
+    confidence_threshold: float = 0.25,
+    nms_threshold: float = 0.45,
+) -> List[Dict]:
     """Run YOLO detection on an image."""
     results = model(image, conf=confidence_threshold, iou=nms_threshold)
     return postprocess_yolo_results(results)
@@ -28,7 +33,11 @@ def postprocess_yolo_results(results) -> List[Dict]:
         boxes = result.boxes
         for box in boxes:
             detection = {
-                'bbox': box.xyxy[0].cpu().numpy().astype(int).tolist(),  # Convert to list for JSON compatibility
+                "bbox": box.xyxy[0]
+                .cpu()
+                .numpy()
+                .astype(int)
+                .tolist(),  # Convert to list for JSON compatibility
             }
             detections.append(detection)
     return detections
@@ -51,11 +60,13 @@ def process_image_dataset(
 
     for image_file in os.listdir(dataset_path):
         if total_captions >= max_captions:
-            print(f"Reached maximum caption limit of {max_captions}. Stopping processing.")
+            print(
+                f"Reached maximum caption limit of {max_captions}. Stopping processing."
+            )
             break
 
         image_path = os.path.join(dataset_path, image_file)
-        if not image_file.lower().endswith(('.png', '.jpg', '.jpeg')):
+        if not image_file.lower().endswith((".png", ".jpg", ".jpeg")):
             continue  # Skip non-image files
 
         # Load image
@@ -71,7 +82,7 @@ def process_image_dataset(
             if total_captions >= max_captions:
                 break
 
-            x1, y1, x2, y2 = det['bbox']
+            x1, y1, x2, y2 = det["bbox"]
             padding = 0.2  # 20% padding
             x1 = max(0, x1 - int(padding * (x2 - x1)))
             x2 = min(image.shape[1], x2 + int(padding * (x2 - x1)))
@@ -91,7 +102,7 @@ def process_image_dataset(
             pil_image = Image.fromarray(cropped_image_rgb)
 
             # Generate caption
-            caption = blip_pipeline(pil_image)[0]['generated_text']
+            caption = blip_pipeline(pil_image)[0]["generated_text"]
 
             if caption in unique_captions:
                 print(f"Skipping duplicate caption: {caption}")
@@ -113,14 +124,18 @@ def process_image_dataset(
 if __name__ == "__main__":
     # Path to YOLO model and dataset
     yolo_model_path = "../models/yolov8s-world.pt"  # Replace with your YOLO model path
-    dataset_path = "../data/coco_dataset/val2017"  # Replace with your dataset folder path
+    dataset_path = (
+        "../data/coco_dataset/val2017"  # Replace with your dataset folder path
+    )
     output_path = "../data"  # Replace with your output folder path
 
     # Load YOLO model
     yolo_model = load_yolo_model(yolo_model_path, device="cuda")
 
     # Initialize BLIP Captioning Pipeline
-    blip_pipeline = pipeline("image-to-text", model="Salesforce/blip-image-captioning-base", device=0)
+    blip_pipeline = pipeline(
+        "image-to-text", model="Salesforce/blip-image-captioning-base", device=0
+    )
 
     # Process dataset
     process_image_dataset(dataset_path, output_path, yolo_model, blip_pipeline)
