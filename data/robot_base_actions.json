@@ -1,0 +1,37 @@
+[
+  {
+    "action": "NavigateTo",
+    "description": "Moves the robot to a specified target (e.g., location or object).",
+    "parameters": ["target"]
+  },
+  {
+    "action": "Pick",
+    "description": "Picks up a specified object.",
+    "parameters": ["object"]
+  },
+  {
+    "action": "Place",
+    "description": "Places an object at a specified location.",
+    "parameters": ["object", "location"]
+  },
+  {
+    "action": "LocateObject",
+    "description": "Searches for a specified object in the environment.",
+    "parameters": ["object"]
+  },
+  {
+    "action": "RequestAssistance",
+    "description": "Requests help for a specific task.",
+    "parameters": ["task"]
+  },
+  {
+    "action": "Wait",
+    "description": "Waits for a specified amount of time.",
+    "parameters": ["duration"]
+  },
+  {
+    "action": "ExecuteCommand",
+    "description": "Runs a specified bash or system command.",
+    "parameters": ["command"]
+  }
+]
