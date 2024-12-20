@@ -5,11 +5,12 @@ This project is currently a work in progress. Features, documentation, and funct
 
 Goat Planner is a system for planning and executing high-level tasks with a robot. It is mainly design to be used with rove, the CAPRA's student club robot. The system uses a fine-tuned version of LLaMA3 to generate behavior trees for robot task planning and execution and multiple AI pipelines to perform perception, mapping, and voice processing. This work builds on top of multiple recent advances in LLM-based robotics research (e.g. [1,2,3]) and multimodal perception (e.g. [4]).
 
-Demonstration: [GoatBrain Video](https://www.youtube.com/watch?v=d-8-XF0w_FI&ab_channel=SimonRoy)
+Here is a small demonstration of an early version showing the integratrion of semantic mapping and task planning : [GoatBrain Video](https://www.youtube.com/watch?v=d-8-XF0w_FI&ab_channel=SimonRoy)
 
 ## Overview
 
 Goat Planner bridges the gap between natural language commands and robot execution by:
+
 - Translating natural language instructions into structured behavior trees
 - Providing real-time execution monitoring and control
 - Supporting both standalone operation and ROS2 integration
@@ -36,6 +37,7 @@ Goat Planner bridges the gap between natural language commands and robot executi
 
 - [ ] Improve shepherd object detection speed
 - [ ] Fine-tune goat planner model to improve tree generation
+- [ ] Add model selection
 - [ ] Add querying from the web interface
 - [ ] Add voice detection (segmentation, wake word, etc.)
 - [ ] Add unit tests to make sure the system is working as expected
