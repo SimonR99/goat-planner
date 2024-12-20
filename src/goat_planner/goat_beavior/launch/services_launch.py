@@ -34,8 +34,8 @@ def generate_launch_description():
             ),
             Node(
                 package="goat_behavior",
-                executable="behavior_manager",
-                name="behavior_manager",
+                executable="shepherd_connector.py",
+                name="shepherd_connector",
                 output="screen",
             ),
         ]

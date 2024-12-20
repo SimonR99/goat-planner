@@ -21,15 +21,25 @@ import {
 
 const socket = io("http://localhost:5000");
 
-// Add the TreeNode interface
+// Update the TreeNode interface
 interface TreeNode {
-  [key: string]: any;
-  root?: {
-    BehaviorTree?: any;
-    main_tree_to_execute?: string;
-  };
-  children?: TreeNode[];
+  type: string;
   name?: string;
+  nodes?: TreeNode[];
+  // Retry specific
+  retries?: string;
+  // Action-specific parameters
+  object?: string;
+  location?: string;
+  method?: string;
+  mode?: string;
+  speed?: string;
+  grip_strength?: string;
+  precision?: string;
+  surface?: string;
+  orientation?: string;
+  alignment?: string;
+  message?: string;
 }
 
 // Add this type definition
@@ -64,11 +74,15 @@ const getNodeIcon = (type: NodeType) => {
 // Custom node types
 const CustomNode: React.FC<NodeProps> = ({ data }) => {
   return (
-    <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-gray-200" 
-         style={{ width: '200px', maxWidth: '200px' }}>
+    <div
+      className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-gray-200"
+      style={{ width: "200px", maxWidth: "200px" }}
+    >
       <Handle type="target" position={Position.Top} className="w-2 h-2" />
       <div className="flex items-center gap-2">
-        <div className="text-xl flex-shrink-0">{getNodeIcon(data.type as NodeType)}</div>
+        <div className="text-xl flex-shrink-0">
+          {getNodeIcon(data.type as NodeType)}
+        </div>
         <div className="text-sm font-bold break-words overflow-hidden">
           {data.label}
         </div>
@@ -102,33 +116,51 @@ const BehaviorTree: React.FC = () => {
   const [jsonText, setJsonText] = useState("");
   const [viewMode, setViewMode] = useState<"json" | "graph">("graph");
 
-  const transformTreeToFlow = (treeData: any) => {
+  const transformTreeToFlow = (treeData: TreeNode) => {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
     let nodeId = 0;
 
-    // First pass: calculate the width needed for each subtree
-    const calculateSubtreeWidth = (node: any): number => {
-      if (!node.children || node.children.length === 0) {
-        return 1;
-      }
-      return node.children.reduce(
-        (sum: number, child: any) => sum + calculateSubtreeWidth(child),
-        0
-      );
-    };
-
-    // Second pass: position nodes
     const processNode = (
-      node: any,
+      node: TreeNode,
       parentId: string | null,
       level: number,
       offsetX: number,
       totalWidth: number
     ): { id: string; width: number } => {
       const currentId = `node-${nodeId++}`;
-      const nodeWidth = calculateSubtreeWidth(node);
+      const nodeWidth = node.nodes?.length || 1;
       const xPosition = offsetX + (nodeWidth * totalWidth) / 2;
+
+      // Get parameters based on node type
+      const getParameters = (node: TreeNode) => {
+        const params: { [key: string]: any } = {};
+
+        if (node.retries) params.retries = node.retries;
+
+        // Add action-specific parameters
+        const actionParams = [
+          "object",
+          "location",
+          "method",
+          "mode",
+          "speed",
+          "grip_strength",
+          "precision",
+          "surface",
+          "orientation",
+          "alignment",
+          "message",
+        ];
+
+        actionParams.forEach((param) => {
+          if (param in node) {
+            params[param] = node[param as keyof TreeNode];
+          }
+        });
+
+        return params;
+      };
 
       // Create node
       nodes.push({
@@ -136,15 +168,12 @@ const BehaviorTree: React.FC = () => {
         type: "custom",
         position: {
           x: xPosition,
-          y: level * 150, // Vertical spacing between levels
+          y: level * 150,
         },
         data: {
-          label: node.name || "Unknown",
-          type: node.type || "action",
-          parameters: {
-            ...(node.attempts ? { attempts: node.attempts } : {}),
-            type: node.type,
-          },
+          label: node.name || node.type,
+          type: node.type.toLowerCase(),
+          parameters: getParameters(node),
         },
       });
 
@@ -159,9 +188,9 @@ const BehaviorTree: React.FC = () => {
       }
 
       // Process children
-      if (node.children && node.children.length > 0) {
+      if (node.nodes && node.nodes.length > 0) {
         let currentOffset = offsetX;
-        node.children.forEach((child: any) => {
+        node.nodes.forEach((child) => {
           const childResult = processNode(
             child,
             currentId,
@@ -176,22 +205,8 @@ const BehaviorTree: React.FC = () => {
       return { id: currentId, width: nodeWidth };
     };
 
-    // Calculate total width needed and start processing
-    const totalNodes = calculateSubtreeWidth(treeData);
-    const horizontalSpacing = 250; // Increased to account for fixed node width
-    const totalWidth = horizontalSpacing;
-
-    if (treeData.root && treeData.root.BehaviorTree) {
-      processNode(
-        transformTreeData(treeData.root.BehaviorTree),
-        null,
-        0,
-        0,
-        totalWidth
-      );
-    } else {
-      processNode(transformTreeData(treeData), null, 0, 0, totalWidth);
-    }
+    // Start processing from root
+    processNode(treeData, null, 0, 0, 250);
 
     return { nodes, edges };
   };
@@ -209,7 +224,7 @@ const BehaviorTree: React.FC = () => {
       console.log("Fetched behavior tree data:", data);
       setTreeData(data);
       setJsonText(JSON.stringify(data, null, 2));
-      
+
       // Transform the data for graph view
       if (data) {
         const flowData = transformTreeToFlow(data);
@@ -251,54 +266,50 @@ const BehaviorTree: React.FC = () => {
   const validateTree = (tree: any): boolean => {
     if (!tree || typeof tree !== "object") return false;
 
-    // Check root structure
-    if ("root" in tree) {
-      const root = tree.root;
-      if (!root.main_tree_to_execute || !root.BehaviorTree) {
-        return false;
-      }
-
-      // Validate BehaviorTree structure
-      const behaviorTree = root.BehaviorTree;
-      if (!behaviorTree.ID || behaviorTree.ID !== root.main_tree_to_execute) {
-        return false;
-      }
-
-      // Recursively validate the rest of the tree
-      return Object.values(behaviorTree).every((node) => {
-        if (typeof node === "object" && node !== null) {
-          return validateNode(node);
-        }
-        return true;
-      });
+    // Check required fields
+    if (!tree.type || !Array.isArray(tree.nodes)) {
+      return false;
     }
 
-    // If not root, validate as a node
-    return validateNode(tree);
+    // Convert type to lowercase for comparison
+    const treeType = tree.type.toLowerCase();
+
+    // Root should be a control node
+    if (!["sequence", "fallback", "retry"].includes(treeType)) {
+      return false;
+    }
+
+    // Validate all nodes in the tree
+    return tree.nodes.every(validateNode);
   };
 
   const validateNode = (node: any): boolean => {
     if (!node || typeof node !== "object") return false;
 
-    // Check if it's a valid node structure
-    if ("children" in node) {
-      if (!Array.isArray(node.children)) return false;
-      return node.children.every(validateNode);
+    // Check required field type
+    if (!node.type) {
+      return false;
     }
 
-    // Recursively validate nested objects
-    return Object.values(node).every((value) => {
-      if (typeof value === "object" && value !== null) {
-        if (Array.isArray(value)) {
-          return value.every((item) => {
-            if (typeof item === "object") return validateNode(item);
-            return true;
-          });
-        }
-        return validateNode(value);
+    // Convert type to lowercase for comparison
+    const nodeType = node.type.toLowerCase();
+
+    // Check if it's a control node
+    if (["sequence", "fallback", "retry"].includes(nodeType)) {
+      // Validate Retry nodes have retries field
+      if (nodeType === "retry" && !node.retries) {
+        return false;
       }
-      return true;
-    });
+
+      // Control nodes should have child nodes
+      if (!node.nodes || !Array.isArray(node.nodes)) {
+        return false;
+      }
+
+      return node.nodes.every(validateNode);
+    }
+
+    return true;
   };
 
   const handleJsonEdit = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -320,53 +331,49 @@ const BehaviorTree: React.FC = () => {
   };
 
   const transformTreeData = (node: TreeNode): any => {
-    // If this is the root node with BehaviorTree structure
-    if (node.root && node.root.BehaviorTree) {
-      return transformTreeData(node.root.BehaviorTree);
-    }
+    // Get parameters based on node type
+    const getParameters = (node: TreeNode) => {
+      const params: { [key: string]: any } = {};
 
-    // Create a node object with name and children
-    const transformedNode: any = {
-      name: node.name || Object.keys(node)[0] || "Unknown",
-      type: getNodeType(node),
-      children: [],
+      if (node.retries) params.retries = node.retries;
+
+      // Add action-specific parameters
+      const actionParams = [
+        "object",
+        "location",
+        "method",
+        "mode",
+        "speed",
+        "grip_strength",
+        "precision",
+        "surface",
+        "orientation",
+        "alignment",
+        "message",
+      ];
+
+      actionParams.forEach((param) => {
+        if (param in node) {
+          params[param] = node[param as keyof TreeNode];
+        }
+      });
+
+      return params;
     };
 
-    // Add all properties as attributes
-    Object.entries(node).forEach(([key, value]) => {
-      if (key !== "children" && typeof value !== "object") {
-        transformedNode[key] = value;
-      }
-    });
+    const transformedNode: any = {
+      name: node.name,
+      type: node.type,
+      parameters: getParameters(node),
+    };
 
-    // Process children
-    Object.entries(node).forEach(([key, value]) => {
-      if (typeof value === "object" && value !== null) {
-        if (Array.isArray(value)) {
-          // Handle array of children
-          value.forEach((child) => {
-            if (typeof child === "object") {
-              transformedNode.children.push(transformTreeData(child));
-            }
-          });
-        } else if (key !== "name" && key !== "type") {
-          // Handle nested objects as children
-          transformedNode.children.push(transformTreeData(value));
-        }
-      }
-    });
+    if (node.nodes && node.nodes.length > 0) {
+      transformedNode.children = node.nodes.map((child) =>
+        transformTreeData(child)
+      );
+    }
 
     return transformedNode;
-  };
-
-  const getNodeType = (node: TreeNode): string => {
-    if ("RecoveryNode" in node) return "recovery";
-    if ("PipelineSequence" in node) return "sequence";
-    if ("ReactiveFallback" in node) return "fallback";
-    if ("RateController" in node) return "rate";
-    if ("ReactiveSequence" in node) return "sequence";
-    if ("RoundRobin" in node) return "round-robin";
-    return "action";
   };
 
   if (error) {
@@ -406,12 +413,12 @@ const BehaviorTree: React.FC = () => {
             value={jsonText}
             onChange={handleJsonEdit}
             className="w-full h-full p-4 font-mono"
-            style={{ 
+            style={{
               minHeight: "400px",
               resize: "none",
               whiteSpace: "pre",
               overflowWrap: "normal",
-              overflowX: "auto"
+              overflowX: "auto",
             }}
           />
         ) : (

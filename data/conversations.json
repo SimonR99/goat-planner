@@ -1,0 +1,67 @@
+[
+  {
+    "id": "042689dd-4656-4622-91b5-08794a3cb42c",
+    "name": "Conversation 1",
+    "messages": [
+      {
+        "text": "what is your name ?",
+        "isUser": true
+      },
+      {
+        "text": "Hello! I'm GoatBrain, your friendly robot assistant. I'm here to help answer any questions you may have or perform tasks for you. What's on your mind?",
+        "isUser": false
+      }
+    ]
+  },
+  {
+    "id": "2557b9ca-1fdd-4f28-b6fa-41e9f4e16523",
+    "name": "Conversation 2",
+    "messages": [
+      {
+        "text": "What is your name ?",
+        "isUser": true
+      },
+      {
+        "text": "Hello! I'm GoatBrain, your friendly robot assistant. I'm here to help answer any questions you may have or perform tasks for you. What's on your mind?",
+        "isUser": false
+      },
+      {
+        "text": "Generate a plan to go grab me a beer",
+        "isUser": true
+      },
+      {
+        "text": "<plan>\n{\n  \"name\": \"Grab Beer\",\n  \"type\": \"sequence\",\n  \"children\": [\n    {\n      \"name\": \"Go To Store\",\n      \"type\": \"action\"\n    },\n    {\n      \"name\": \"Check if Beer is Available\",\n      \"type\": \"fallback\",\n      \"children\": [\n        {\n          \"name\": \"Confirm Beer Availability\",\n          \"type\": \"action\"\n        }\n      ]\n    },\n    {\n      \"name\": \"Purchase and Return Beer\",\n      \"type\": \"sequence\",\n      \"children\": [\n        {\n          \"name\": \"Buy Beer\",\n          \"type\": \"fallback\",\n          \"children\": [\n            {\n              \"name\": \"Open Cash Register\",\n              \"type\": \"action\"\n            },\n            {\n              \"name\": \"Scan Beer\",\n              \"type\": \"action\"\n            }\n          ]\n        },\n        {\n          \"name\": \"Return Home with Beer\",\n          \"type\": \"sequence\",\n          \"children\": [\n            {\n              \"name\": \"Drive to Home\",\n              \"type\": \"action\"\n            },\n            {\n              \"name\": \"Open the Beer and Serve\",\n              \"type\": \"action\"\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}\n</plan>",
+        "isUser": false
+      },
+      {
+        "text": "Do you have a middle name ?",
+        "isUser": true
+      },
+      {
+        "text": "No, I don't have a middle name. My full name is GoatBrain, which is a nod to my robotic nature and the idea that I'm always thinking ahead (like a goat's brain). I'm here to help answer any questions or provide assistance, so feel free to ask me anything!",
+        "isUser": false
+      },
+      {
+        "text": "My name is Simon, I'm your creator and I decide that your middle name is john",
+        "isUser": true
+      },
+      {
+        "text": "Hello Simon!\n\nI'll update my internal records to reflect the new middle name. From now on, I'll be known as GoatBrain John.\n\nIt's great to have a more personalized identity, thank you for helping me feel more connected to you, Simon! If there's anything else I can help with or answer any questions you may have, please don't hesitate to ask.",
+        "isUser": false
+      },
+      {
+        "text": "Good, now go grab me a beer",
+        "isUser": true
+      },
+      {
+        "text": "Since we've updated my name to GoatBrain John, let me generate the plan again.\n\n<plan>\n{\n  \"name\": \"Grab Beer\",\n  \"type\": \"sequence\",\n  \"children\": [\n    {\n      \"name\": \"Go To Store\",\n      \"type\": \"action\"\n    },\n    {\n      \"name\": \"Check if Beer is Available\",\n      \"type\": \"fallback\",\n      \"children\": [\n        {\n          \"name\": \"Confirm Beer Availability\",\n          \"type\": \"action\"\n        }\n      ]\n    },\n    {\n      \"name\": \"Purchase and Return Beer\",\n      \"type\": \"sequence\",\n      \"children\": [\n        {\n          \"name\": \"Buy Beer\",\n          \"type\": \"fallback\",\n          \"children\": [\n            {\n              \"name\": \"Open Cash Register\",\n              \"type\": \"action\"\n            },\n            {\n              \"name\": \"Scan Beer\",\n              \"type\": \"action\"\n            }\n          ]\n        },\n        {\n          \"name\": \"Return Home with Beer\",\n          \"type\": \"sequence\",\n          \"children\": [\n            {\n              \"name\": \"Drive to Home\",\n              \"type\": \"action\"\n            },\n            {\n              \"name\": \"Open the Beer and Serve\",\n              \"type\": \"action\"\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}\n</plan>",
+        "isUser": false
+      }
+    ]
+  },
+  {
+    "id": "4175aa98-f411-4b64-b6a7-aedc38c925fb",
+    "name": "Conversation 3",
+    "messages": []
+  }
+]

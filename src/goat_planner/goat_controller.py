@@ -8,6 +8,7 @@ from ollama import Client, ResponseError
 from .behavior_tree import BehaviorTree
 from .goat_state import GoatState
 from .models.text_to_speech import TextToSpeech
+from .utils.json_xml_convertor import json_to_xml
 
 
 class GoatController:
@@ -22,47 +23,119 @@ The behavior tree should use the following node types:
 - sequence: Executes children in order, stops if one fails
 - fallback: Tries children in order until one succeeds
 - retry: Retries its child node a specified number of times
-- action: A leaf node representing a specific action
 - loop: Continuously executes its child nodes
+- anything else: Represents a specific action
 
-Example of a correct plan output:
+
+Example of a correct plan output :
 <plan>
 {
-  "name": "Root",
-  "type": "sequence",
-  "children": [
+  "type": "Sequence",
+  "name": "RetrieveFoodSequence",
+  "nodes": [
     {
-      "name": "Open Door",
-      "type": "fallback",
-      "children": [
+      "type": "Retry",
+      "retries": "3",
+      "nodes": [
         {
-          "name": "Check if Door is Open",
-          "type": "action",
-          "children": []
-        },
-        {
-          "name": "Open Door",
-          "type": "retry",
-          "children": [
-            {
-              "name": "Attempt to Open Door",
-              "type": "action",
-              "children": []
-            }
-          ],
-          "attempts": 5
+          "type": "Locate",
+          "object": "apple",
+          "location": "kitchen",
+          "method": "camera_scan"
         }
       ]
     },
     {
-      "name": "Enter Room",
-      "type": "action",
-      "children": []
+      "type": "Fallback",
+      "name": "LocateFoodFallback",
+      "nodes": [
+        {
+          "type": "Locate",
+          "object": "apple",
+          "location": "kitchen",
+          "method": "camera_scan"
+        },
+        {
+          "type": "AskForHelp",
+          "message": "Unable to locate the apple. Please assist."
+        }
+      ]
     },
     {
-      "name": "Close Door",
-      "type": "action",
-      "children": []
+      "type": "Retry",
+      "retries": "2",
+      "nodes": [
+        {
+          "type": "NavigateTo",
+          "location": "kitchen_table",
+        }
+      ]
+    },
+    {
+      "type": "Retry",
+      "retries": "2",
+      "nodes": [
+        {
+          "type": "Pick",
+          "object": "apple",
+          "grip_strength": "medium",
+          "precision": "high"
+        }
+      ]
+    },
+    {
+      "type": "Retry",
+      "retries": "2",
+      "nodes": [
+        {
+          "type": "NavigateTo",
+          "location": "dining_table",
+        }
+      ]
+    },
+    {
+      "type": "Fallback",
+      "name": "PlaceFoodFallback",
+      "nodes": [
+        {
+          "type": "Place",
+          "object": "apple",
+          "surface": "dining_table",
+          "orientation": "upright",
+          "alignment": "center"
+        },
+        {
+          "type": "AskForHelp",
+          "message": "Unable to place the apple. Please assist."
+        }
+      ]
+    }
+  ]
+}
+</plan>
+
+Available actions:
+- Navigate (x coordinate, y coordinate)
+- Wait (duration)
+
+Example of a correct plan output :
+<plan>
+{
+  "type": "Sequence",
+  "name": "MainSequence",
+  "nodes": [
+    {
+      "type": "Wait",
+      "duration": "2.0"
+    },
+    {
+      "type": "Navigate",
+      "x": "2.0",
+      "y": "0.0"
+    },
+    {
+      "type": "Wait",
+      "duration": "2.0"
     }
   ]
 }
@@ -84,7 +157,6 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         on_state_update_callback: Optional[Callable] = None,
         use_tts: bool = False,
     ):
-
         self.ollama_host = ollama_host
         self.model = model
         self.on_message_callback = on_message_callback
@@ -146,6 +218,11 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         user_message = {"text": message, "isUser": True}
         conversation["messages"].append(user_message)
 
+        # Update the conversation in the database immediately after adding user message
+        self.state.update_conversation(
+            conversation_id, {"messages": conversation["messages"]}
+        )
+
         if self.on_message_callback:
             self.on_message_callback(conversation_id, user_message)
 
@@ -184,7 +261,6 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
     def _process_ollama_response(
         self, conversation_id: str, ollama_messages: List[Dict]
     ) -> Dict:
-
         stream = self.ollama_client.chat(
             model=self.model,
             messages=ollama_messages,
@@ -226,6 +302,9 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
         conversation = next(c for c in self.conversations if c["id"] == conversation_id)
         ai_message_obj = {"text": ai_response, "isUser": False}
         conversation["messages"].append(ai_message_obj)
+        self.state.update_conversation(
+            conversation_id, {"messages": conversation["messages"]}
+        )
 
         # Process TTS after complete response
         if self.use_tts and self.tts and not in_plan:
@@ -263,8 +342,17 @@ Always strive to be helpful, clear, and concise in your responses. Refer to your
             # Update both the behavior tree and state
             if self.behavior_tree.update_tree(plan_data):
                 # Store the plan in the database through GoatState
+
                 self.state.update_behavior_tree(plan_data)
-                
+
+                # Save into xml file
+                with open(
+                    "src/goat_planner/goat_beavior/behavior_trees/main_tree.xml",
+                    "w",
+                    encoding="utf-8",
+                ) as f:
+                    f.write(json_to_xml(plan_data))
+
                 # Notify listeners about the plan update
                 if self.on_plan_update_callback:
                     self.on_plan_update_callback(self.behavior_tree.get_tree())

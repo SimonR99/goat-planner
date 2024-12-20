@@ -1,66 +1,83 @@
 import json
 import xml.etree.ElementTree as ET
-from html import unescape
 from xml.dom.minidom import parseString
-
-
-def json_to_xml(json_obj, root_name="root"):
-    def build_xml_element(element, data):
-        if isinstance(data, dict):
-            for key, value in data.items():
-                sub_element = ET.SubElement(element, key)
-                build_xml_element(sub_element, value)
-        elif isinstance(data, list):
-            for item in data:
-                sub_element = ET.SubElement(element, "item")
-                build_xml_element(sub_element, item)
-        else:
-            element.text = str(data)
-
-    root = ET.Element(root_name)
-    build_xml_element(root, json_obj)
-    xml_string = ET.tostring(
-        root, encoding="unicode"
-    )  # Use unicode to keep raw characters
-    pretty_xml = parseString(xml_string).toprettyxml(indent="  ")
-    return pretty_xml
 
 
 def xml_to_json(xml_string):
     def parse_element(element):
-        child_elements = list(element)
-        if not child_elements:
-            return (
-                unescape(element.text.strip()) if element.text else None
-            )  # Decode entities
-        result = {}
-        for child in child_elements:
-            if child.tag == "item":  # Handle lists
-                result.setdefault(child.tag, [])
-                result[child.tag].append(parse_element(child))
-            else:
-                result[child.tag] = parse_element(child)
-        return result
+        node = {"type": element.tag}
+        if element.attrib:
+            node.update(element.attrib)
+        children = list(element)
+        if children:
+            node["nodes"] = [parse_element(child) for child in children]
+        elif element.text and element.text.strip():
+            node["parameters"] = {"text": element.text.strip()}
+        return node
 
     root = ET.fromstring(xml_string)
-    return {root.tag: parse_element(root)}
+    main_tree_to_execute = root.attrib.get("main_tree_to_execute", "MainTree")
+    main_tree = None
+
+    # Find the BehaviorTree node that matches the main_tree_to_execute
+    for child in root:
+        if child.attrib.get("ID") == main_tree_to_execute:
+            main_tree = parse_element(child)
+            break
+
+    # Return only the core nodes (remove BehaviorTree wrapper)
+    return main_tree["nodes"][0]  # The core behavior tree
+
+
+def json_to_xml(json_obj):
+    def build_element(node):
+        element = ET.Element(node["type"])
+        for key, value in node.items():
+            if key == "nodes":
+                for child in value:
+                    element.append(build_element(child))
+            elif key != "type":
+                element.set(key, str(value))
+        return element
+
+    # Wrap the core JSON in a BehaviorTree and root
+    behavior_tree = {
+        "type": "BehaviorTree",
+        "ID": "MainTree",
+        "nodes": [json_obj],  # Wrap the core tree as nodes
+    }
+    root_element = ET.Element("root", {"main_tree_to_execute": "MainTree"})
+    behavior_tree_element = build_element(behavior_tree)
+    root_element.append(behavior_tree_element)
+
+    # Pretty-print the XML
+    rough_string = ET.tostring(root_element, "utf-8")
+    return parseString(rough_string).toprettyxml(indent="    ")
 
 
 # Test Example
 if __name__ == "__main__":
-    json_data = {
-        "person": {
-            "name": 'John "Doe"',
-            "age": 30,
-            "hobbies": ['reading "books"', "cycling"],
-            "address": {"city": "New York", "zipcode": "10001"},
-        }
-    }
+    xml_string = """
+<root main_tree_to_execute="MainTree">
+    <BehaviorTree ID="MainTree">
+        <Sequence name="root_sequence">
+            <SaySomething name="action_hello" message="Hello"/>
+            <OpenGripper name="open_gripper"/>
+            <ApproachObject name="approach_object"/>
+            <CloseGripper name="close_gripper"/>
+        </Sequence>
+    </BehaviorTree>
+</root>
+"""
+
+    print("XML to JSON:")
+    json_data = xml_to_json(xml_string)
+    print(json.dumps(json_data, indent=2))
 
     print("JSON to XML:")
     xml_output = json_to_xml(json_data)
     print(xml_output)
 
-    print("XML to JSON:")
-    back_to_json = xml_to_json(xml_output)
-    print(json.dumps(back_to_json, indent=2))
+    xml_output = xml_output.replace("\n", "").replace('<?xml version="1.0" ?>', "")
+    xml_string = xml_string.replace("\n", "")
+    print(xml_string == xml_output)

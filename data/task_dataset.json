@@ -1,0 +1,152 @@
+[
+  {
+    "task": "Retrieve the red apple from the kitchen counter and place it on the wooden cutting board on the dining table."
+  },
+  {
+    "task": "Locate the flashlight and report its position."
+  },
+  {
+    "task": "Pick up the ceramic plate with some bread crumbs and place it on the kitchen counter."
+  },
+  {
+    "task": "Navigate to the position of the safety helmet."
+  },
+  {
+    "task": "Move forward by 2.5 meters."
+  },
+  {
+    "task": "Retrieve the fire extinguisher and place it on the ladder."
+  },
+  {
+    "task": "Locate the smartphone and tell me its X, Y, and Z coordinates."
+  },
+  {
+    "task": "Pick up the pair of gloves and place them on the tarp."
+  },
+  {
+    "task": "Navigate to the pair of boots and wait for 5 seconds."
+  },
+  {
+    "task": "Follow a predefined path to navigate to the fireproof blanket and the walkie-talkie."
+  },
+  {
+    "task": "Retrieve the water bottle and place it on the map."
+  },
+  {
+    "task": "Turn 90 degrees to your left."
+  },
+  {
+    "task": "Pick up the roll of duct tape and place it on the crowbar."
+  },
+  {
+    "task": "Locate the hammer and move it to the safety helmet's location."
+  },
+  {
+    "task": "Move backward by 1.5 meters."
+  },
+  {
+    "task": "Request assistance with the message: 'Help needed to identify the camping stove.'"
+  },
+  {
+    "task": "Retrieve the backpack and place it on the folding chair."
+  },
+  {
+    "task": "Locate the tarp and navigate to its position."
+  },
+  {
+    "task": "Turn 180 degrees and move forward 3 meters."
+  },
+  {
+    "task": "Follow a path that leads to the notebook and pen, the pair of binoculars, and the bag of sand."
+  },
+  {
+    "task": "Retrieve the empty glass cup from next to the sink and place it near the red apple on the kitchen counter."
+  },
+  {
+    "task": "Check the current battery level."
+  },
+  {
+    "task": "Locate the ceramic plate with bread crumbs and align it upright on the wooden cutting board."
+  },
+  {
+    "task": "Pick up the silver knife from the counter and place it next to the red apple."
+  },
+  {
+    "task": "Find the medical splint and report its position."
+  },
+  {
+    "task": "Retrieve the ladder and place it near the stack of wood."
+  },
+  {
+    "task": "Locate the compass and report its X, Y, and Z coordinates."
+  },
+  {
+    "task": "Pick up the tarp and place it over the stack of wood."
+  },
+  {
+    "task": "Navigate to the position of the folding chair."
+  },
+  {
+    "task": "Move forward by 1.0 meter."
+  },
+  {
+    "task": "Retrieve the thermal blanket and place it on the sleeping bag."
+  },
+  {
+    "task": "Locate the fireproof blanket and align it flat on the ground."
+  },
+  {
+    "task": "Pick up the walkie-talkie and place it on the backpack."
+  },
+  {
+    "task": "Navigate to the safety helmet and wait for 3 seconds."
+  },
+  {
+    "task": "Follow a predefined path to navigate to the rope and the crowbar."
+  },
+  {
+    "task": "Retrieve the bag of rice and place it on the cooking pot."
+  },
+  {
+    "task": "Turn 45 degrees to the right."
+  },
+  {
+    "task": "Pick up the first aid kit and place it on the wooden cutting board."
+  },
+  {
+    "task": "Locate the emergency flare and report its position."
+  },
+  {
+    "task": "Move backward by 0.5 meters."
+  },
+  {
+    "task": "Request assistance with the message: 'Help needed to locate the car jack.'"
+  },
+  {
+    "task": "Retrieve the notebook and pen and place them on the table near the flashlight."
+  },
+  {
+    "task": "Locate the crowbar and align it parallel to the ladder."
+  },
+  {
+    "task": "Turn 270 degrees and move forward 1.5 meters."
+  },
+  {
+    "task": "Follow a path that leads to the hammer, the roll of duct tape, and the folding knife."
+  },
+  {
+    "task": "Retrieve the can of soup and place it on the camping stove."
+  },
+  {
+    "task": "Check the current battery level of the robot."
+  },
+  {
+    "task": "Locate the water filter and place it next to the safety helmet."
+  },
+  {
+    "task": "Pick up the stack of wood and align it upright."
+  },
+  {
+    "task": "Find the fire extinguisher and place it near the emergency flare."
+  }
+]

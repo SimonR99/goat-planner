@@ -161,12 +161,12 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-data/*
+data/shared/*
 llama-3.2-3b-it-Ecommerce-ChatBot/*
 models/llama-3.2-3b-it-Ecommerce-ChatBot/*
 models/wandb/*
 wandb/*
-training/llama-3.2-3b-it-Ecommerce-ChatBot/*
+training/llama-*
 training/wandb/*
 
 # ROS2

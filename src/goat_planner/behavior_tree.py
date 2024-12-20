@@ -1,50 +1,43 @@
 import json
 
+
 class BehaviorTree:
     def __init__(self):
-        self.tree = {
-            "root": {
-                "main_tree_to_execute": "MainTree",
-                "BehaviorTree": {
-                    "ID": "MainTree",
-                    "RecoveryNode": {
-                        "name": "Root",
-                        "number_of_retries": "0",
-                        "children": []
-                    }
-                }
-            }
-        }
+        self.tree = {"type": "Sequence", "name": "Root", "nodes": []}
 
     def validate_tree(self, tree):
         if not isinstance(tree, dict):
             return False
-            
-        # Check if it's the root structure
-        if "root" in tree:
-            if "main_tree_to_execute" not in tree["root"] or "BehaviorTree" not in tree["root"]:
-                return False
-            return self.validate_node(tree["root"]["BehaviorTree"])
-            
-        # For individual nodes
-        return self.validate_node(tree)
+
+        # Check required fields
+        if not all(key in tree for key in ["type", "name", "nodes"]):
+            return False
+
+        # Validate nodes array
+        if not isinstance(tree["nodes"], list):
+            return False
+
+        # Validate each node in the tree
+        return all(self.validate_node(node) for node in tree["nodes"])
 
     def validate_node(self, node):
         if not isinstance(node, dict):
             return False
-            
-        # Allow any property in the node
-        for key, value in node.items():
-            # If the value is a dict, recursively validate it
-            if isinstance(value, dict):
-                if not self.validate_node(value):
-                    return False
-            # If the value is a list, validate each dict in the list
-            elif isinstance(value, list):
-                for item in value:
-                    if isinstance(item, dict):
-                        if not self.validate_node(item):
-                            return False
+
+        # Check required fields for all nodes
+        if not all(key in node for key in ["type"]):
+            return False
+
+        # Validate specific node types
+        if node["type"] == "Retry" and "retries" not in node:
+            return False
+
+        # If node has child nodes, validate them
+        if "nodes" in node:
+            if not isinstance(node["nodes"], list):
+                return False
+            return all(self.validate_node(child) for child in node["nodes"])
+
         return True
 
     def update_tree(self, new_tree):

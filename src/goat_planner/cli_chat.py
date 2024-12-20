@@ -12,7 +12,7 @@ class CliChat:
             on_message_callback=self.on_message,
             on_plan_update_callback=self.on_plan_update,
             on_state_update_callback=self.on_state_update,
-            use_tts=use_tts
+            use_tts=use_tts,
         )
         self.current_conversation = None
         self.current_response = ""
@@ -24,11 +24,11 @@ class CliChat:
             if not self.is_streaming:
                 self.is_streaming = True
                 print("\nAI: ", end="", flush=True)
-            
+
             # Print the new content only (not the full message)
             new_content = message["text"]
             print(new_content, end="", flush=True)
-            
+
             # If the message ends with a newline, mark streaming as complete
             if new_content.endswith("\n"):
                 self.is_streaming = False
@@ -74,11 +74,11 @@ class CliChat:
                     # Reset streaming state for new message
                     self.is_streaming = False
                     self.current_response = ""
-                    
+
                     self.controller.process_message(
                         self.current_conversation["id"], user_input
                     )
-                    
+
                     # Ensure a newline after the response is complete
                     if self.is_streaming:
                         print()
@@ -94,8 +94,8 @@ class CliChat:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='GoatBrain CLI Chat')
-    parser.add_argument('--tts', action='store_true', help='Enable text-to-speech')
+    parser = argparse.ArgumentParser(description="GoatBrain CLI Chat")
+    parser.add_argument("--tts", action="store_true", help="Enable text-to-speech")
     args = parser.parse_args()
 
     chat = CliChat(use_tts=args.tts)
