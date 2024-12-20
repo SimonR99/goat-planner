@@ -166,7 +166,7 @@ llama-3.2-3b-it-Ecommerce-ChatBot/*
 models/llama-3.2-3b-it-Ecommerce-ChatBot/*
 models/wandb/*
 wandb/*
-training/llama-3.2-3b-it-Ecommerce-ChatBot/*
+training/llama-*
 training/wandb/*
 
 # ROS2
@@ -178,4 +178,3 @@ log/*
 build/*
 .vscode/c_cpp_properties.json
 .vscode/settings.json
-training/*

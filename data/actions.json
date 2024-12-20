@@ -1,0 +1,60 @@
+{
+  "action_list": [
+    {
+      "name": "Wait",
+      "description": "Wait for a specific duration",
+      "params": {
+        "duration": "float, duration of the waiting time in seconds, e.g., 2.0"
+      }
+    },
+    {
+      "name": "Navigate",
+      "description": "Go to a destination",
+      "params": {
+        "x": "float, X coordinate of the destination, e.g., 1.5",
+        "y": "float, Y coordinate of the destination, e.g., 0.0"
+      }
+    },
+    {
+      "name": "Pick",
+      "description": "Pick up an object",
+      "params": {
+        "object": "string, name of the object to pick up, e.g., 'apple'",
+        "grip_strength": "string, grip strength to use, options: 'low', 'medium', 'high'",
+        "precision": "string, precision level, options: 'low', 'medium', 'high'"
+      }
+    },
+    {
+      "name": "Place",
+      "description": "Place an object at a location",
+      "params": {
+        "object": "string, name of the object to place, e.g., 'apple'",
+        "surface": "string, name of the surface to place the object on, e.g., 'table'",
+        "orientation": "string, orientation of the object, e.g., 'upright'",
+        "alignment": "string, alignment of the object, e.g., 'center'"
+      }
+    },
+    {
+      "name": "Locate",
+      "description": "Find an object",
+      "params": {
+        "object": "string, name of the object to locate, e.g., 'apple'"
+      },
+      "output": {
+        "position_x": "float, X coordinate of the object",
+        "position_y": "float, Y coordinate of the object",
+        "position_z": "float, Z coordinate of the object"
+      }
+    },
+    {
+      "name": "GetCurrentPosition",
+      "description": "Retrieve the current position of the robot",
+      "params": {},
+      "output": {
+        "position_x": "float, current X coordinate of the robot",
+        "position_y": "float, current Y coordinate of the robot",
+        "position_z": "float, current Z coordinate of the robot"
+      }
+    }
+  ]
+} 

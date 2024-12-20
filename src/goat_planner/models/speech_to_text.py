@@ -6,7 +6,6 @@ import numpy as np
 import sounddevice as sd
 from faster_whisper import WhisperModel
 from transformers import pipeline
-from transformers.pipelines.audio_utils import ffmpeg_microphone_live
 
 
 class VoiceAssistant:

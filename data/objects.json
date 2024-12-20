@@ -1,0 +1,16 @@
+{
+  "object_list": [
+    {
+      "name": "a water bottle",
+      "position": {"x": 12.3, "y": 5.8, "z": 1.0}
+    },
+    {
+      "name": "a first aid kit",
+      "position": {"x": 24.7, "y": 3.5, "z": 0.8}
+    },
+    {
+      "name": "a flashlight",
+      "position": {"x": 9.2, "y": 4.1, "z": 0.5}
+    }
+  ]
+} 
